@@ -1,8 +1,8 @@
 <?php
 
-namespace IAWP;
+namespace IAWP\Email_Reports;
 
-use IAWP\Statistics\Page_Statistics;
+use IAWP\Statistics\Statistics;
 use IAWPSCOPED\Proper\Number;
 /** @internal */
 class Email_Chart
@@ -12,7 +12,7 @@ class Email_Chart
     public $y_labels;
     public $x_labels;
     private $statistics;
-    public function __construct(Page_Statistics $statistics)
+    public function __construct(Statistics $statistics)
     {
         $this->statistics = $statistics;
         $this->views = self::views();
@@ -22,10 +22,9 @@ class Email_Chart
     }
     public function views()
     {
-        $interval = \IAWPSCOPED\iawp()->get_option('iawp_email_report_interval', 'monthly');
         return \array_map(function ($day) {
             return $day[1];
-        }, $this->statistics->views()->daily_summary());
+        }, $this->statistics->get_statistic('views')->statistic_over_time());
     }
     public function most_views()
     {
@@ -46,7 +45,7 @@ class Email_Chart
         }
         $all_x_labels = \array_map(function ($day) use($format) {
             return $day[0]->format($format);
-        }, $this->statistics->views()->daily_summary());
+        }, $this->statistics->get_statistic('views')->statistic_over_time());
         $x_labels = [];
         if ($interval == 'monthly') {
             for ($x = 0; $x < \count($all_x_labels); $x++) {

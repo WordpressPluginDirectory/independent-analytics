@@ -5,7 +5,7 @@ Donate link: https://independentwp.com
 Requires at least: 5.9
 Tested up to: 6.5.2
 Requires PHP: 7.3.33
-Stable tag: 2.5.1
+Stable tag: 2.7.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -194,28 +194,98 @@ We use best practice techniques to filter out bot visits as efficiently as possi
 
 == Changelog ==
 
-= 2.5.1 - May 23rd 2024 =
+= 2.7.3 - August 1st, 2024 =
+
+* **Fix:** super admins were still limited to only viewing authored content in some situations
+
+= 2.7.2 - July 30th, 2024 =
+
+* **Fix:** super admins were limited to only viewing authored content
+
+= 2.7.1 - July 29th, 2024 =
+
+* **Fix:** some MariaDB instances don't support optimizer_switch customization
+
+= 2.7.0 - July 25th, 2024 =
+
+* **Feature:** added new option to delete data older than X days/years
+* **Feature:** added new option to allow authors (non-admins) to see stats for only their own content
+* **Feature:** added option to hide the view counter label
+* **Feature:** added support for tracking custom forms via a new PHP hook
+* **Update:** added form tracking integrations for the Bit Form, Forminator, and Hustle plugins
+* **Update:** dark mode styles added for all modal windows and sub-menus
+* **Update:** added Turkish & Vietnamese translations
+* **Update:** updated copy to make it clear that IP addresses get ignored, not blocked
+* **Update:** improved display of long column titles in the data table
+* **Update:** improved display of numerous chart metrics like conversion rate and bounce rate
+* **Fix:** filters were loading extremely slowly for some sites using MariaDB
+* **Fix:** the chart was not saving “No comparison” if selected as the second metric
+* **Fix:** the real-time analytics report was missing data in the widgets from sessions lasting longer than 5 minutes
+* **Fix:** some English text was not marked for translation
+* **Fix:** WooCommerce metrics in the chart always used the dollar sign instead of the store’s preferred currency
+
+= 2.6.4 - July 17th, 2024 =
+
+* **Fix:** WooCommerce statistics didn't show for multisite installations
+* **Fix:** WooCommerce order tracking could fail under some circumstances
+
+= 2.6.3 - July 10th, 2024 =
+
+* **Fix:** Email report heading wasn't considering timezones
+* **Fix:** Formidable Forms and MailOptin submissions going untracked
+
+= 2.6.2 - July 2nd, 2024 =
+
+* **Fix:** WooCommerce orders using the block checkout were not tracked
+* **Fix:** Email report scheduling wasn't considering timezones
+
+= 2.6.1 - July 1st, 2024 =
+
+* **Fix:** Integers were being parsed as strings for some PHP configurations
+
+= 2.6.0 - June 27th, 2024 =
+
+* **Feature:** All metrics can now be displayed in the chart!
+* **Feature:** Added Bricks Builder integration for form tracking
+* **Feature:** Added ARForms integration for form tracking
+* **Update:** View counter can use all the ranges available in the date picker (including the shortcode)
+* **Update:** Improvements to session tracking accuracy
+* **Update:** Added support for WPML Multi-currency
+* **Update:** Updated IP-to-geolocation library
+* **Fix:** Added compatibility with MySQL over SSL
+* **Fix:** Monthly email reports could get sent a day earlier or late
+* **Fix:** Message about WP Hardening blocking the REST API was showing even when the REST API wasn’t blocked
+* **Fix:** Some English text wasn’t getting translated
+* **Fix:** Error with Shield Security REST API check
+* **Fix:** Error with WP Cerber REST API check
+* **Fix:** Remove warning about Perfmatters REST API check
+* **Fix:** Prevent SQL error triggered when updating large menus
+* **Fix:** Fixed style conflict with WP Analytify affecting the dashboard widget
+* **Fix:** Removed the “Views” column added to the Elementor Templates menu
+* **Fix:** Calendar display was broken for RTL websites
+
+= 2.5.1 - May 23rd, 2024 =
 
 * **Fix:** Timezone comparisons were causing warnings in the logs
 
 = 2.5.0 - May 21st, 2024 =
 
-**Feature:** Form tracking added to Independent Analytics Pro!
-**Feature:** Quick Stats can now be toggled on/off and saved
-**Feature:** Added option to change the date range in the view counter shortcode
-**Feature:** Added the Views column to custom post type menus too
-**Update:** Recognizing more WC order statuses as complete, such as “shipped” and “delivered”
-**Update:** Integrated with SearchIQ plugin to recognize its search queries
-**Update:** Changelog menu now says “New” in its notification instead of using a number
-**Update:** Unminified copies of all JS files are included to comply with OSS guidelines
-**Update:** Updated Freemius SDK to version 2.7.2
-**Fix:** Resolved conflict with the WP Activity Log plugin
-**Fix:** UI fixes for filters and save button
-**Fix:** Sorting the Views column in the Posts menu wasn’t working
-**Fix:** Renamed some elements to prevent conflicts with plugins loading Bootstrap.css
-**Fix:** Wildcards are recognized when checking if the current IP is blocked
-**Fix:** Timezone issue with Beirut could cause data to go missing from the chart
-**Fix:** Prevent error upon installation for sites with long DB prefixes
+* **Feature:** Form tracking added to Independent Analytics Pro!
+* **Feature:** Quick Stats can now be toggled on/off and saved
+* **Feature:** Added option to change the date range in the view counter shortcode
+* **Feature:** Added the Views column to custom post type menus too
+* **Update:** Recognizing more WC order statuses as complete, such as “shipped” and “delivered”
+* **Update:** Integrated with SearchIQ plugin to recognize its search queries
+* **Update:** Changelog menu now says “New” in its notification instead of using a number
+* **Update:** Unminified copies of all JS files are included to comply with OSS guidelines
+* **Update:** Updated Freemius SDK to version 2.7.2
+* **Fix:** Resolved conflict with the WP Activity Log plugin
+* **Fix:** UI fixes for filters and save button
+* **Fix:** Sorting the Views column in the Posts menu wasn’t working
+* **Fix:** Renamed some elements to prevent conflicts with plugins loading Bootstrap.css
+* **Fix:** Wildcards are recognized when checking if the current IP is blocked
+* **Fix:** Timezone issue with Beirut could cause data to go missing from the chart
+* **Fix:** Prevent error upon installation for sites with long DB prefixes
 
 = 2.4.3 - April 25th, 2024 =
 

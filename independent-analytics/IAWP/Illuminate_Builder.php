@@ -4,7 +4,9 @@ namespace IAWP;
 
 use IAWPSCOPED\Illuminate\Database\Capsule\Manager as Capsule;
 use IAWPSCOPED\Illuminate\Database\Connection;
+use IAWPSCOPED\Illuminate\Database\ConnectionInterface;
 use IAWPSCOPED\Illuminate\Database\Query\Builder;
+use PDO;
 /**
  * Connects to the WordPress database using Illuminate from Laravel
  *
@@ -16,10 +18,17 @@ use IAWPSCOPED\Illuminate\Database\Query\Builder;
 class Illuminate_Builder
 {
     private static $connection = null;
+    public static function get_connection() : ConnectionInterface
+    {
+        if (self::$connection === null) {
+            self::$connection = self::make_connection();
+        }
+        return self::$connection;
+    }
     public static function get_builder() : Builder
     {
         if (self::$connection === null) {
-            self::$connection = self::get_connection();
+            self::$connection = self::make_connection();
         }
         return new Builder(self::$connection);
     }
@@ -32,7 +41,7 @@ class Illuminate_Builder
             return ray(\vsprintf($replace_question_marks, $builder->getBindings()));
         }
     }
-    private static function get_connection() : Connection
+    private static function make_connection() : Connection
     {
         global $wpdb;
         $raw_host = $wpdb->dbhost;
@@ -51,7 +60,13 @@ class Illuminate_Builder
         // Collation is no longer added due to issue with WP Rocket with testing 1.23.0. In the future,
         // $connection_options should have the collation property added only if it's defined. It should
         // not get set for empty strings.
-        $connection_options = ['driver' => 'mysql', 'database' => $database_name, 'username' => $username, 'password' => $password, 'charset' => $charset, 'prefix' => ''];
+        $connection_options = ['driver' => 'mysql', 'database' => $database_name, 'username' => $username, 'password' => $password, 'charset' => $charset, 'prefix' => '', 'options' => self::ssl_options()];
+        // Ensures that we use an SSL database connection when WordPress is using one.
+        // WordPress does SSL, but not with certificate verification. We do the same.
+        if (self::should_use_ssl()) {
+            $connection_options['options'][PDO::MYSQL_ATTR_SSL_CA] = \true;
+            $connection_options['options'][PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = \false;
+        }
         if (isset($socket)) {
             $connection_options['unix_socket'] = $socket;
         } else {
@@ -64,6 +79,63 @@ class Illuminate_Builder
         $capsule->addConnection($connection_options);
         $capsule->setAsGlobal();
         $capsule->bootEloquent();
-        return $capsule->getConnection();
+        $connection = $capsule->getConnection();
+        self::disable_mariadb_optimization($connection);
+        return $connection;
+    }
+    /**
+     * This disabled the lateral derived optimization for MariaDB users. This was cause slowdowns
+     * when filtering even with few views.
+     *
+     * https://mariadb.com/kb/en/lateral-derived-optimization/
+     *
+     * @param Connection $connection
+     *
+     * @return void
+     */
+    private static function disable_mariadb_optimization(Connection $connection)
+    {
+        $pdo = $connection->getPdo();
+        $version = $pdo->query("SELECT VERSION() AS version")->fetchColumn();
+        if (\strpos(\strtolower($version), 'mariadb') === \false) {
+            return;
+        }
+        try {
+            $pdo->exec("SET optimizer_switch='split_materialized=off'");
+        } catch (\Throwable $exception) {
+        }
+    }
+    private static function ssl_options() : array
+    {
+        if (self::should_use_ssl()) {
+            if (!\defined('MYSQL_SSL_CA')) {
+                return [PDO::MYSQL_ATTR_SSL_CA => \true, PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => \false];
+            }
+            return [PDO::MYSQL_ATTR_SSL_CA => \MYSQL_SSL_CA, PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => \true];
+        }
+        if (self::should_use_ssl_without_certificate_verification()) {
+            return [PDO::MYSQL_ATTR_SSL_CA => \true, PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => \false];
+        }
+        return [];
+    }
+    private static function should_use_ssl() : bool
+    {
+        if (!\defined('MYSQL_CLIENT_FLAGS')) {
+            return \false;
+        }
+        if (\MYSQL_CLIENT_FLAGS & \MYSQLI_CLIENT_SSL) {
+            return \true;
+        }
+        return \false;
+    }
+    private static function should_use_ssl_without_certificate_verification() : bool
+    {
+        if (!\defined('MYSQL_CLIENT_FLAGS')) {
+            return \false;
+        }
+        if (\MYSQL_CLIENT_FLAGS & \MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT) {
+            return \true;
+        }
+        return \false;
     }
 }

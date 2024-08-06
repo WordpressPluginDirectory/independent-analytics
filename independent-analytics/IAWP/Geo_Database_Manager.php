@@ -12,21 +12,21 @@ class Geo_Database_Manager
 {
     // Updating the database? Read the Wiki page "Updating The Geo Database"
     // https://github.com/andrewjmead/independent-analytics/wiki/Updating-The-Geo-Database
-    private $zip_download_url = 'https://assets.independentwp.com/iawp-geo-db-5.mmdb.zip';
-    private $raw_download_url = 'https://assets.independentwp.com/iawp-geo-db-5.mmdb';
-    private $database_checksum = '6fc58b0047547e4a7f718e4d3552491c';
+    private $zip_download_url = 'https://assets.independentwp.com/iawp-geo-db-6.mmdb.zip';
+    private $raw_download_url = 'https://assets.independentwp.com/iawp-geo-db-6.mmdb';
+    private $database_checksum = '2213359f8d395c4f1a352007af9495ae';
     public function download() : void
     {
         if (!$this->should_download()) {
             return;
         }
-        \update_option('iawp_is_database_downloading', '1');
+        \update_option('iawp_is_database_downloading', '1', \true);
         $this->download_zip_database_and_extract();
         if (!$this->is_existing_database_valid()) {
             $this->download_raw_database();
         } else {
         }
-        \update_option('iawp_is_database_downloading', '0');
+        \update_option('iawp_is_database_downloading', '0', \true);
         $this->record_attempt();
     }
     public function should_download() : bool
@@ -105,7 +105,7 @@ class Geo_Database_Manager
     {
         $now = new DateTime('now', Timezone::utc_timezone());
         $value = $now->format('Y-m-d\\TH:i:s');
-        \update_option('iawp_geo_database_download_last_attempted_at', $value);
+        \update_option('iawp_geo_database_download_last_attempted_at', $value, \true);
     }
     private function path_to_database_zip() : string
     {

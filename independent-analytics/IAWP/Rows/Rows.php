@@ -3,7 +3,7 @@
 namespace IAWP\Rows;
 
 use IAWP\Date_Range\Date_Range;
-use IAWP\Form;
+use IAWP\Form_Submissions\Form;
 use IAWP\Illuminate_Builder;
 use IAWP\Query;
 use IAWP\Sort_Configuration;
@@ -65,6 +65,12 @@ abstract class Rows
     protected function get_current_period_iso_range() : array
     {
         return [$this->date_range->iso_start(), $this->date_range->iso_end()];
+    }
+    protected function appears_to_be_for_real_time_analytics() : bool
+    {
+        $difference_in_seconds = $this->date_range->end()->getTimestamp() - $this->date_range->start()->getTimestamp();
+        $one_hour_in_seconds = 3600;
+        return $difference_in_seconds < $one_hour_in_seconds;
     }
     protected function get_previous_period_iso_range() : array
     {
