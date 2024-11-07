@@ -5,7 +5,7 @@ namespace IAWP\Ecommerce;
 use IAWP\Cron_Job;
 use IAWPSCOPED\Illuminate\Support\Collection;
 /** @internal */
-class SureCart_Cron_Job extends Cron_Job
+class SureCart_Event_Sync_Job extends Cron_Job
 {
     protected $name = 'iawp_surecart_event_syncing';
     protected $interval = 'five_minutes';
