@@ -15,6 +15,7 @@ use IAWP\Ecommerce\EDD_Order;
 use IAWP\Ecommerce\PMPro_Order;
 use IAWP\Ecommerce\SureCart_Event_Sync_Job;
 use IAWP\Ecommerce\SureCart_Order;
+use IAWP\Ecommerce\SureCart_Store;
 use IAWP\Ecommerce\WooCommerce_Order;
 use IAWP\Ecommerce\WooCommerce_Referrer_Meta_Box;
 use IAWP\Email_Reports\Email_Reports;
@@ -22,10 +23,12 @@ use IAWP\Form_Submissions\Form;
 use IAWP\Form_Submissions\Submission_Listener;
 use IAWP\Menu_Bar_Stats\Menu_Bar_Stats;
 use IAWP\Migrations\Migrations;
+use IAWP\Overview\Module_Refresh_Job;
 use IAWP\Utils\Plugin;
 use IAWP\Utils\Singleton;
 use IAWP\Utils\Timezone;
 use IAWPSCOPED\Illuminate\Support\Carbon;
+use IAWPSCOPED\Illuminate\Support\Str;
 /** @internal */
 class Independent_Analytics
 {
@@ -61,6 +64,8 @@ class Independent_Analytics
         $this->cron_manager = new \IAWP\Cron_Manager();
         (new SureCart_Event_Sync_Job())->register_handler();
         (new Click_Processing_Job())->register_handler();
+        (new Module_Refresh_Job())->register_handler();
+        (new \IAWP\Migration_Fixer_Job())->register_handler();
         if (\IAWPSCOPED\iawp_is_pro()) {
             $this->email_reports = new Email_Reports();
             new \IAWP\Campaign_Builder();
@@ -86,6 +91,8 @@ class Independent_Analytics
         \add_filter('cmplz_whitelisted_script_tags', [$this, 'whitelist_script_tag_for_complianz']);
         \add_filter('plugin_action_links_independent-analytics/iawp.php', [$this, 'add_upgrade_link_in_plugins_menu'], 999);
         \add_filter('plugin_row_meta', [$this, 'add_docs_link_in_plugins_menu'], 10, 2);
+        \add_action('admin_footer', [$this, 'attach_system_appearance_script'], 99, 0);
+        \add_filter('sgo_javascript_combine_excluded_inline_content', [$this, 'exclude_tracking_script_from_speed_optimizer'], 10, 1);
     }
     public function add_upgrade_link_in_plugins_menu($links)
     {
@@ -93,7 +100,7 @@ class Independent_Analytics
             return $links;
         }
         $upgrade_link = '<a target="_blank" style="color:#36B366;font-weight:700;"
-            href="https://independentwp.com/pricing/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=Plugin+Settings+Link"
+            href="https://independentwp.com/pro/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=Plugin+Settings+Link"
             >' . \esc_html__('Upgrade to Pro', 'independent-analytics') . '</a>';
         \array_unshift($links, $upgrade_link);
         return $links;
@@ -105,10 +112,58 @@ class Independent_Analytics
         }
         return $plugin_meta;
     }
+    /**
+     * Attach some JavaScript to manage the color scheme for admin pages.
+     *
+     * @return void
+     */
+    public function attach_system_appearance_script() : void
+    {
+        ?>
+        <script>
+            ;(() => {
+                try {
+                    const isLightMode = document.body.classList.contains('iawp-light-mode')
+                    const isDarkMode = document.body.classList.contains('iawp-dark-mode')
+                    const isSystem = !isLightMode && !isDarkMode
+
+                    // Stop if they're not using the systems color scheme
+                    if(!isSystem) {
+                        return
+                    }
+
+                    // Switch to dark mode if dark is the system color scheme preference
+                    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        document.body.classList.add('iawp-dark-mode')
+                    }
+
+                    // Watching for changes is a nice idea, but it's more complicated than just
+                    // adding or removing a class from the body. There are elements like
+                    // charts that cannot adapt without a rendered. Holding off on this.
+
+                    // window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                    //     if(event.matches) {
+                    //         document.body.classList.remove('iawp-light-mode')
+                    //         document.body.classList.add('iawp-dark-mode')
+                    //     } else {
+                    //         document.body.classList.remove('iawp-dark-mode')
+                    //         document.body.classList.add('iawp-light-mode')
+                    //     }
+                    // });
+                } catch (error) {
+
+                }
+            })();
+
+        </script>
+        <?php 
+    }
     public function add_body_class($classes)
     {
-        if (\get_option('iawp_dark_mode')) {
-            $classes .= ' iawp-dark-mode ';
+        if (\IAWP\Appearance::is_light()) {
+            $classes .= 'iawp-light-mode';
+        } elseif (\IAWP\Appearance::is_dark()) {
+            $classes .= 'iawp-dark-mode';
         }
         $page = \IAWP\Env::get_page();
         if (\is_string($page)) {
@@ -151,7 +206,7 @@ class Independent_Analytics
     // Changes the URL for the "Upgrade" tab in the Account menu
     public function change_freemius_pricing_url()
     {
-        return 'https://independentwp.com/pricing/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=Upgrade+to+Pro&utm_content=Account';
+        return 'https://independentwp.com/pro/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=Upgrade+to+Pro&utm_content=Account';
     }
     public function add_admin_menu_pages()
     {
@@ -193,7 +248,7 @@ class Independent_Analytics
             });
         }
         if (\IAWPSCOPED\iawp_is_free() && \IAWP\Capability_Manager::show_branded_ui()) {
-            \add_submenu_page('independent-analytics', \esc_html__('Upgrade to Pro &rarr;', 'independent-analytics'), '<span style="color: #F69D0A;">' . \esc_html__('Upgrade to Pro &rarr;', 'independent-analytics') . '</span>', \IAWP\Capability_Manager::menu_page_capability_string(), \esc_url('https://independentwp.com/pricing/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=Upgrade+to+Pro&utm_content=Sidebar'));
+            \add_submenu_page('independent-analytics', \esc_html__('Upgrade to Pro &rarr;', 'independent-analytics'), '<span style="color: #F69D0A;">' . \esc_html__('Upgrade to Pro &rarr;', 'independent-analytics') . '</span>', \IAWP\Capability_Manager::menu_page_capability_string(), \esc_url('https://independentwp.com/pro/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=Upgrade+to+Pro&utm_content=Sidebar'));
         }
     }
     // The menu link is removed in the SDK setup, but this makes it completely inaccessible
@@ -273,7 +328,7 @@ class Independent_Analytics
     {
         \wp_register_script('iawp-translations', '');
         \wp_enqueue_script('iawp-translations');
-        \wp_add_inline_script('iawp-translations', 'const iawpText = ' . \json_encode(['views' => \__('Views', 'independent-analytics'), 'exactDates' => \__('Apply Exact Dates', 'independent-analytics'), 'relativeDates' => \__('Apply Relative Dates', 'independent-analytics'), 'copied' => \__('Copied', 'independent-analytics'), 'exportingPages' => \__('Exporting Pages...', 'independent-analytics'), 'exportPages' => \__('Export Pages', 'independent-analytics'), 'exportingReferrers' => \__('Exporting Referrers...', 'independent-analytics'), 'exportReferrers' => \__('Export Referrers', 'independent-analytics'), 'exportingGeolocations' => \__('Exporting Geolocations...', 'independent-analytics'), 'exportGeolocations' => \__('Export Geolocations', 'independent-analytics'), 'exportingDevices' => \__('Exporting Devices...', 'independent-analytics'), 'exportDevices' => \__('Export Devices', 'independent-analytics'), 'exportingCampaigns' => \__('Exporting Campaigns...', 'independent-analytics'), 'exportCampaigns' => \__('Export Campaigns', 'independent-analytics'), 'exportingClicks' => \__('Exporting Clicks', 'independent-analytics'), 'exportClicks' => \__('Export Clicks', 'independent-analytics'), 'invalidReportArchive' => \__('This report archive is invalid. Please export your reports and try again.', 'independent-analytics'), 'openMobileMenu' => \__('Open menu', 'independent-analytics'), 'closeMobileMenu' => \__('Close menu', 'independent-analytics')]), 'before');
+        \wp_add_inline_script('iawp-translations', 'const iawpText = ' . \json_encode(['views' => \__('Views', 'independent-analytics'), 'visitors' => \__('Visitors', 'independent-analytics'), 'sessions' => \__('Sessions', 'independent-analytics'), 'exactDates' => \__('Apply Exact Dates', 'independent-analytics'), 'relativeDates' => \__('Apply Relative Dates', 'independent-analytics'), 'copied' => \__('Copied', 'independent-analytics'), 'exportingPages' => \__('Exporting Pages...', 'independent-analytics'), 'exportPages' => \__('Export Pages', 'independent-analytics'), 'exportingReferrers' => \__('Exporting Referrers...', 'independent-analytics'), 'exportReferrers' => \__('Export Referrers', 'independent-analytics'), 'exportingGeolocations' => \__('Exporting Geolocations...', 'independent-analytics'), 'exportGeolocations' => \__('Export Geolocations', 'independent-analytics'), 'exportingDevices' => \__('Exporting Devices...', 'independent-analytics'), 'exportDevices' => \__('Export Devices', 'independent-analytics'), 'exportingCampaigns' => \__('Exporting Campaigns...', 'independent-analytics'), 'exportCampaigns' => \__('Export Campaigns', 'independent-analytics'), 'exportingClicks' => \__('Exporting Clicks', 'independent-analytics'), 'exportClicks' => \__('Export Clicks', 'independent-analytics'), 'invalidReportArchive' => \__('This report archive is invalid. Please export your reports and try again.', 'independent-analytics'), 'openMobileMenu' => \__('Open menu', 'independent-analytics'), 'closeMobileMenu' => \__('Close menu', 'independent-analytics'), 'noComparison' => \__('No Comparison', 'independent-analytics')]), 'before');
     }
     public function enqueue_nonces()
     {
@@ -374,6 +429,23 @@ class Independent_Analytics
     {
         return $this->is_woocommerce_support_enabled() || $this->is_surecart_support_enabled() || $this->is_edd_support_enabled() || $this->is_pmpro_support_enabled();
     }
+    public function get_currency_code() : ?string
+    {
+        if ($this->is_woocommerce_support_enabled()) {
+            return get_woocommerce_currency();
+        }
+        if ($this->is_surecart_support_enabled()) {
+            return SureCart_Store::get_currency_code();
+        }
+        if ($this->is_edd_support_enabled()) {
+            return \edd_get_currency();
+        }
+        if ($this->is_pmpro_support_enabled()) {
+            global $pmpro_default_currency;
+            return $pmpro_default_currency;
+        }
+        return null;
+    }
     // This is for compatibility with the "Lock and Protect System Folders" setting in the Security Optimizer plugin
     public function whitelist_click_endpoint($whitelist)
     {
@@ -383,11 +455,24 @@ class Independent_Analytics
         $whitelist[] = 'iawp-click-endpoint.php';
         return $whitelist;
     }
+    public function exclude_tracking_script_from_speed_optimizer($exclude_list)
+    {
+        $exclude_list[] = '// Do not change this comment line otherwise Speed Optimizer won\'t be able to detect this script';
+        return $exclude_list;
+    }
     // This whitelists our plugin with the "Complianz" plugin
     public function whitelist_script_tag_for_complianz($scripts)
     {
         $scripts[] = '/wp-json/iawp/search';
         return $scripts;
+    }
+    public function prefers_24_hour_clock() : bool
+    {
+        $time_format = \IAWPSCOPED\iawp()->get_option('time_format', 'g:i a');
+        if (Str::contains($time_format, 'a') || Str::contains($time_format, 'A')) {
+            return \false;
+        }
+        return \true;
     }
     private function actually_check_if_woocommerce_support_is_enabled() : bool
     {

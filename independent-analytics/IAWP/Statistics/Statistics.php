@@ -89,11 +89,29 @@ abstract class Statistics
             return ['name' => $plugin_group, 'items' => $items->toArray()];
         })->filter()->values()->toArray();
     }
-    public function get_statistic(string $statistic_id) : ?\IAWP\Statistics\Statistic
+    /**
+     * @param string $statistic_id
+     * @param string ...$fallbacks A series of statistics ids to fall back to
+     *
+     * @return Statistic|null
+     */
+    public function get_statistic(string $statistic_id, string ...$fallbacks) : ?\IAWP\Statistics\Statistic
     {
-        foreach ($this->statistic_instances as $statistic_instance) {
-            if ($statistic_instance->id() == $statistic_id) {
-                return $statistic_instance;
+        $statistics = Collection::make($this->statistic_instances);
+        // First, try the primary statistic id
+        $statistic = $statistics->first(function (\IAWP\Statistics\Statistic $statistic) use($statistic_id) {
+            return $statistic->id() === $statistic_id;
+        });
+        if ($statistic instanceof \IAWP\Statistics\Statistic) {
+            return $statistic;
+        }
+        // Second, try the fallback statistic ids
+        foreach ($fallbacks as $fallback_statistic_id) {
+            $statistic = $statistics->first(function (\IAWP\Statistics\Statistic $statistic) use($fallback_statistic_id) {
+                return $statistic->id() === $fallback_statistic_id;
+            });
+            if ($statistic instanceof \IAWP\Statistics\Statistic) {
+                return $statistic;
             }
         }
         return null;
@@ -298,7 +316,7 @@ abstract class Statistics
         $original_end = (clone $this->date_range->end())->setTimezone(Timezone::site_timezone());
         $end = $this->chart_interval->calculate_start_of_interval_for($original_end);
         $end->add(new DateInterval('PT1S'));
-        $is_problematic_timezone = \in_array(Timezone::site_timezone()->getName(), ['Asia/Beirut', 'America/Santiago', 'America/Havana', 'America/Asuncion']);
+        $is_problematic_timezone = \in_array(Timezone::site_timezone()->getName(), ['Asia/Beirut', 'America/Santiago', 'America/Havana', 'America/Asuncion', 'Atlantic/Azores']);
         // Imagine a scenario where the offset for the start date is -4 and the offset for the
         // end date is -3. In that case, the DatePeriod is actually going to have its end date
         // short an hour, causing a date we care about to be chopped off the end. This code makes

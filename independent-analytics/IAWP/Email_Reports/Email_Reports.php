@@ -83,17 +83,11 @@ class Email_Reports
     }
     public function send_email_report(bool $is_test_email = \false)
     {
-        // This code was added to fix an issue with monthly email reports. When you set up a monthly
-        // email report, the first email will always be correct because we pick the exact timestamp
-        // we want to send it. The issue is with the recurring interval. It's backed by MONTH_IN_SECONDS
-        // which is a fixed constant. Months have a varying number of seconds so this caused slight
-        // differences in when subsequent monthly email reports were sent. The code below fixes this by
-        // rescheduling monthly email reports as they're sent. That allows us to pinpoint the exact
-        // correct next time to run it, while still falling back to the inaccurate monthly interval
-        // should a given email never send for some reason.
-        if ($this->interval()->id() === 'monthly') {
-            $this->schedule();
-        }
+        // Email reports should be scheduled every time. CRON jobs run on a fixed interval which cannot
+        // account for daylight saving times changes, causing them to send at the wrong hour as daylight
+        // savings time changes. Months also have a varying number of days and need to be rescheduled
+        // to consistently send on the correct day.
+        $this->schedule();
         $to = \IAWPSCOPED\iawp()->get_option('iawp_email_report_email_addresses', []);
         if (empty($to)) {
             return;
@@ -101,6 +95,14 @@ class Email_Reports
         $from = \IAWPSCOPED\iawp()->get_option('iawp_email_report_from_address', \get_option('admin_email'));
         $reply_to = \IAWPSCOPED\iawp()->get_option('iawp_email_report_reply_to_address', \get_option('admin_email'));
         $body = $this->get_email_body();
+        if (\count($to) > 1) {
+            for ($i = 0; $i < \count($to); $i++) {
+                if ($i == 0) {
+                    continue;
+                }
+                $headers[] = 'Bcc: ' . $to[$i];
+            }
+        }
         $headers[] = 'From: ' . \get_bloginfo('name') . ' <' . \esc_attr($from) . '>';
         $headers[] = 'Reply-To: ' . \esc_attr($reply_to);
         $headers[] = 'Content-Type: text/html; charset=UTF-8';
@@ -108,7 +110,7 @@ class Email_Reports
         \add_filter('haet_mail_use_template', function () {
             return \false;
         });
-        return \wp_mail($to, $this->subject_line($is_test_email), $body, $headers);
+        return \wp_mail($to[0], $this->subject_line($is_test_email), $body, $headers);
     }
     public function get_email_body($colors = '')
     {

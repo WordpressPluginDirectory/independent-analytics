@@ -76,8 +76,10 @@ if (!function_exists('iawp_is_free')) { function iawp_is_free() { return \IAWPSC
 if (!function_exists('iawp_is_pro')) { function iawp_is_pro() { return \IAWPSCOPED\iawp_is_pro(...func_get_args()); } }
 if (!function_exists('iawp_log')) { function iawp_log() { return \IAWPSCOPED\iawp_log(...func_get_args()); } }
 if (!function_exists('iawp_path_to')) { function iawp_path_to() { return \IAWPSCOPED\iawp_path_to(...func_get_args()); } }
+if (!function_exists('iawp_render')) { function iawp_render() { return \IAWPSCOPED\iawp_render(...func_get_args()); } }
 if (!function_exists('iawp_singular_analytics')) { function iawp_singular_analytics() { return \IAWPSCOPED\iawp_singular_analytics(...func_get_args()); } }
 if (!function_exists('iawp_temp_path_to')) { function iawp_temp_path_to() { return \IAWPSCOPED\iawp_temp_path_to(...func_get_args()); } }
+if (!function_exists('iawp_top_posts')) { function iawp_top_posts() { return \IAWPSCOPED\iawp_top_posts(...func_get_args()); } }
 if (!function_exists('iawp_upload_path_to')) { function iawp_upload_path_to() { return \IAWPSCOPED\iawp_upload_path_to(...func_get_args()); } }
 if (!function_exists('iawp_upload_url_to')) { function iawp_upload_url_to() { return \IAWPSCOPED\iawp_upload_url_to(...func_get_args()); } }
 if (!function_exists('iawp_url_to')) { function iawp_url_to() { return \IAWPSCOPED\iawp_url_to(...func_get_args()); } }
