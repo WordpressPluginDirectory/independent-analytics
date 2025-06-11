@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Independent Analytics 2.11.3\n"
+"Project-Id-Version: Independent Analytics 2.11.6\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/independent-analytics-production\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-13T19:35:04+00:00\n"
+"POT-Creation-Date: 2025-06-10T14:40:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: independent-analytics\n"
@@ -36,15 +36,15 @@ msgctxt "Following text is a noun: DB-IP"
 msgid "Geolocation data powered by"
 msgstr ""
 
-#: IAWP/Admin_Page/Analytics_Page.php:176
+#: IAWP/Admin_Page/Analytics_Page.php:178
 msgid "The \"Solid Security\" plugin is disabling PHP execution in the plugins folder, and this is preventing click tracking from working. Please visit the Security > Settings page, click on the Advanced section, click on System Tweaks Settings, uncheck the \"Disable PHP Plugins\" option, and then save."
 msgstr ""
 
-#: IAWP/Admin_Page/Analytics_Page.php:182
+#: IAWP/Admin_Page/Analytics_Page.php:184
 msgid "Please clear your cache to ensure tracking works properly."
 msgstr ""
 
-#: IAWP/Admin_Page/Analytics_Page.php:182
+#: IAWP/Admin_Page/Analytics_Page.php:184
 msgid "I've cleared the cache"
 msgstr ""
 
@@ -148,7 +148,7 @@ msgid "Protocol"
 msgstr ""
 
 #: IAWP/Custom_WordPress_Columns/Views_Column.php:35
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 #: IAWP/Menu_Bar_Stats/Menu_Bar_Stats.php:65
 #: IAWP/Report.php:105
 #: IAWP/Statistics/Statistics.php:202
@@ -164,8 +164,8 @@ msgid "Views"
 msgstr ""
 
 #: IAWP/Dashboard_Widget.php:24
-#: IAWP/Independent_Analytics.php:213
 #: IAWP/Independent_Analytics.php:214
+#: IAWP/Independent_Analytics.php:215
 #: IAWP/Interrupt.php:19
 #: IAWP/Interrupt.php:20
 msgid "Analytics"
@@ -539,50 +539,50 @@ msgstr ""
 msgid "Divi Contact Form"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:104
+#: IAWP/Independent_Analytics.php:105
 #: views/partials/sidebar.blade.php:22
 msgid "Upgrade to Pro"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:111
+#: IAWP/Independent_Analytics.php:112
 msgid "Knowledge Base"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:198
+#: IAWP/Independent_Analytics.php:199
 msgid "Success"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:219
+#: IAWP/Independent_Analytics.php:220
 msgid "Settings"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:225
+#: IAWP/Independent_Analytics.php:226
 msgid "Campaign Builder"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:230
+#: IAWP/Independent_Analytics.php:231
 #: views/click-tracking/menu.blade.php:4
 msgid "Click Tracking"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:237
+#: IAWP/Independent_Analytics.php:238
 msgid "Help & Support"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:243
-#: IAWP/Independent_Analytics.php:245
+#: IAWP/Independent_Analytics.php:244
+#: IAWP/Independent_Analytics.php:246
 msgid "Changelog"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:244
+#: IAWP/Independent_Analytics.php:245
 msgid "New"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:251
+#: IAWP/Independent_Analytics.php:252
 msgid "Upgrade to Pro &rarr;"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 #: IAWP/Report.php:105
 #: IAWP/Statistics/Statistics.php:202
 #: IAWP/Tables/Table_Campaigns.php:25
@@ -593,7 +593,7 @@ msgstr ""
 msgid "Visitors"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 #: IAWP/Overview/Modules/New_Sessions_Module.php:34
 #: IAWP/Report.php:105
 #: IAWP/Statistics/Statistics.php:202
@@ -607,87 +607,87 @@ msgstr ""
 msgid "Sessions"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Apply Exact Dates"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Apply Relative Dates"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Copied"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Exporting Pages..."
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Export Pages"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Exporting Referrers..."
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Export Referrers"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Exporting Geolocations..."
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Export Geolocations"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Exporting Devices..."
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Export Devices"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Exporting Campaigns..."
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Export Campaigns"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Exporting Clicks"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Export Clicks"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "This report archive is invalid. Please export your reports and try again."
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 #: views/partials/sidebar.blade.php:38
 msgid "Open menu"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 msgid "Close menu"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:331
+#: IAWP/Independent_Analytics.php:338
 #: IAWP/Overview/Form_Field.php:91
 #: views/chart.blade.php:40
 #: views/chart.blade.php:43
 msgid "No Comparison"
 msgstr ""
 
-#: IAWP/Independent_Analytics.php:351
+#: IAWP/Independent_Analytics.php:358
 #: IAWP/Menu_Bar_Stats/Menu_Bar_Stats.php:65
 msgid "Analytics Dashboard"
 msgstr ""
@@ -1026,11 +1026,15 @@ msgstr ""
 msgid "The \"Admin and Site Enhancements\" plugin is blocking the REST API, which Independent Analytics needs to record views. Please visit the Tools > Enhancements menu, click on the \"Disable Components\" section, and deselect the \"Disable REST API\" setting to allow Independent Analytics to track your visitors."
 msgstr ""
 
-#: IAWP/Plugin_Conflict_Detector.php:184
+#: IAWP/Plugin_Conflict_Detector.php:187
+msgid "The \"Admin and Site Enhancements Pro\" plugin is blocking the REST API, which Independent Analytics needs to record views. Please visit the Tools > Enhancements menu, click on the \"Disable Components\" section, and then click the \"Expand\" link under \"Disable REST API.\" You can then enter \"iawp/search\" into the textarea to whitelist the route used by Independent Analytics."
+msgstr ""
+
+#: IAWP/Plugin_Conflict_Detector.php:194
 msgid "A setting in the \"Autoptimize\" plugin is preventing Independent Analytics from tracking visitors. Please visit the Settings > Autoptimize menu and uncheck the \"Also aggregate inline JS\" option."
 msgstr ""
 
-#: IAWP/Plugin_Conflict_Detector.php:189
+#: IAWP/Plugin_Conflict_Detector.php:199
 msgid "The Patchstack Security plugin has disabled the REST API, which Independent Analytics needs to record visitors. Please login to the Patchstack app, navigate to the Hardening menu for this site, and turn off the \"Restrict WP REST API access\" option."
 msgstr ""
 
@@ -1900,7 +1904,7 @@ msgstr ""
 msgid "Your site needs the PDO PHP module enabled for Independent Analytics to run. You can ask your web host to enable this for you, or follow our guide to enable it yourself:"
 msgstr ""
 
-#: views/notices/notice.blade.php:6
+#: views/notices/notice.blade.php:9
 msgid "Learn More"
 msgstr ""
 
