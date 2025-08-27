@@ -7,6 +7,7 @@ use IAWP\Illuminate_Builder;
 use IAWP\Models\Device;
 use IAWP\Query;
 use IAWP\Query_Taps;
+use IAWP\Tables;
 use IAWPSCOPED\Illuminate\Database\Query\Builder;
 use IAWPSCOPED\Illuminate\Database\Query\JoinClause;
 /** @internal */
@@ -45,11 +46,18 @@ class Device_OSS extends \IAWP\Rows\Rows
             $join->on('views.id', '=', 'orders.initial_view_id')->where('orders.is_included_in_analytics', '=', \true);
         })->leftJoin("{$this->tables::clicks()} AS clicks", function (JoinClause $join) {
             $join->on('views.id', '=', 'clicks.view_id');
-        })->tap(Query_Taps::tap_authored_content_check())->when(!$this->appears_to_be_for_real_time_analytics(), function (Builder $query) {
+        })->tap(Query_Taps::tap_authored_content_check())->when($this->examiner_config, function (Builder $query) {
+            if ($this->examiner_config->group() !== 'link_pattern') {
+                return;
+            }
+            $query->leftJoin(Tables::clicked_links() . ' AS clicked_links', function (JoinClause $join) {
+                $join->on('clicked_links.click_id', '=', 'clicks.click_id');
+            });
+        })->tap(Query_Taps::tap_related_to_examined_record($this->examiner_config))->when(!$this->appears_to_be_for_real_time_analytics(), function (Builder $query) {
             $query->whereBetween('sessions.created_at', $this->get_current_period_iso_range());
         })->whereBetween('views.viewed_at', $this->get_current_period_iso_range())->leftJoinSub($this->get_form_submissions_query(), 'form_submissions', function (JoinClause $join) {
             $join->on('form_submissions.view_id', '=', 'views.id');
-        })->whereNotNull('sessions.device_os_id')->groupBy('sessions.session_id');
+        })->whereNotNull('sessions.device_os_id')->groupBy('sessions.session_id', 'sessions.old_visitor_id', 'sessions.visitor_id', 'sessions.initial_view_id', 'sessions.referrer_id', 'sessions.campaign_id', 'sessions.created_at', 'sessions.legacy_view', 'sessions.final_view_id', 'sessions.ended_at', 'sessions.city_id', 'sessions.country_id', 'sessions.total_views', 'sessions.device_type_id', 'sessions.device_os_id', 'sessions.device_browser_id', 'sessions.is_first_session');
         $device_oss_query = Illuminate_Builder::new();
         $device_oss_query->select('device_oss.device_os_id', 'device_oss.device_os AS os')->selectRaw('IFNULL(CAST(SUM(sessions.views) AS SIGNED), 0) AS views')->selectRaw('COUNT(DISTINCT sessions.visitor_id)  AS visitors')->selectRaw('COUNT(DISTINCT sessions.session_id)  AS sessions')->selectRaw('ROUND(AVG( TIMESTAMPDIFF(SECOND, sessions.created_at, sessions.ended_at))) AS average_session_duration')->selectRaw('COUNT(DISTINCT IF(sessions.final_view_id IS NULL, sessions.session_id, NULL))  AS bounces')->selectRaw('SUM(sessions.clicks)  AS clicks')->selectRaw('SUM(sessions.wc_orders) AS wc_orders')->selectRaw('SUM(sessions.wc_gross_sales) AS wc_gross_sales')->selectRaw('SUM(sessions.wc_refunded_amount) AS wc_refunded_amount')->selectRaw('SUM(sessions.wc_refunds) AS wc_refunds')->selectRaw('SUM(sessions.form_submissions) AS form_submissions')->tap(function (Builder $query) {
             foreach (Form::get_forms() as $form) {
@@ -65,7 +73,9 @@ class Device_OSS extends \IAWP\Rows\Rows
                     $filter->apply_to_query($query);
                 }
             }
-        })->groupBy('device_oss.device_os_id')->having('views', '>', 0)->when(!$this->is_using_a_calculated_column(), function (Builder $query) {
+        })->when(\is_int($this->solo_record_id), function (Builder $query) {
+            $query->where('device_oss.device_os_id', '=', $this->solo_record_id);
+        })->groupBy('device_oss.device_os_id', 'device_oss.device_os')->having('views', '>', 0)->when(!$this->is_using_a_calculated_column(), function (Builder $query) {
             $query->when($this->sort_configuration->is_column_nullable(), function (Builder $query) {
                 $query->orderByRaw("CASE WHEN {$this->sort_configuration->column()} IS NULL THEN 1 ELSE 0 END");
             })->orderBy($this->sort_configuration->column(), $this->sort_configuration->direction())->orderBy('os')->when(\is_int($this->number_of_rows), function (Builder $query) {

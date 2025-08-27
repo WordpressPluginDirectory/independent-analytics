@@ -3,7 +3,7 @@
 namespace IAWP\Models;
 
 /** @internal */
-class Click
+class Link extends \IAWP\Models\Model
 {
     protected $row;
     protected $link_name;
@@ -15,6 +15,14 @@ class Click
         $this->link_name = $row->link_name;
         $this->link_target = $row->link_target ?? '';
         $this->link_clicks = \intval($row->link_clicks);
+    }
+    public function id() : int
+    {
+        return $this->row->click_target_id;
+    }
+    public function table_type() : string
+    {
+        return 'clicks';
     }
     public function link_name() : string
     {
@@ -30,5 +38,13 @@ class Click
     public function link_clicks() : int
     {
         return $this->link_clicks;
+    }
+    public function examiner_title() : string
+    {
+        return $this->link_name();
+    }
+    public function examiner_url() : string
+    {
+        return \IAWPSCOPED\iawp_dashboard_url(['tab' => 'clicks', 'examiner' => $this->id()]);
     }
 }
