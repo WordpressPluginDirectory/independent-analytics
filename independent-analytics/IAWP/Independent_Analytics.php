@@ -14,6 +14,7 @@ use IAWP\AJAX\AJAX_Manager;
 use IAWP\Click_Tracking\Click_Processing_Job;
 use IAWP\Data_Pruning\Pruner;
 use IAWP\Ecommerce\EDD_Order;
+use IAWP\Ecommerce\Fluent_Cart_Order;
 use IAWP\Ecommerce\PMPro_Order;
 use IAWP\Ecommerce\SureCart_Event_Sync_Job;
 use IAWP\Ecommerce\SureCart_Order;
@@ -43,6 +44,7 @@ class Independent_Analytics
     private $is_surecart_support_enabled;
     private $is_edd_support_enabled;
     private $is_pmpro_support_enabled;
+    private $is_fluent_cart_support_enabled;
     private $is_form_submission_support_enabled;
     // This is where we attach functions to WP hooks
     private function __construct()
@@ -62,6 +64,7 @@ class Independent_Analytics
             EDD_Order::register_hooks();
             PMPro_Order::register_hooks();
             SureCart_Order::register_hooks();
+            Fluent_Cart_Order::register_hooks();
         }
         \IAWP\Cron_Job::register_custom_intervals();
         $this->cron_manager = new \IAWP\Cron_Manager();
@@ -89,6 +92,11 @@ class Independent_Analytics
         \IAWP_FS()->add_filter('show_deactivation_feedback_form', function () {
             return \false;
         });
+        \IAWP_FS()->add_filter('connect-header', [$this, 'freemius_optin_heading']);
+        \IAWP_FS()->add_filter('connect_message', [$this, 'freemius_optin_text']);
+        if (\function_exists('IAWPSCOPED\\fs_override_i18n')) {
+            fs_override_i18n(array('opt-in-connect' => \__('Subscribe & Go To Analytics', 'independent-analytics'), 'skip' => \__('No, thanks', 'independent-analytics')), 'independent-analytics');
+        }
         // Other hooks
         \add_action('admin_init', [$this, 'maybe_delete_mu_plugin']);
         \add_action('admin_body_class', [$this, 'add_body_class']);
@@ -217,6 +225,28 @@ class Independent_Analytics
     public function change_freemius_pricing_url()
     {
         return 'https://independentwp.com/pro/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=Upgrade+to+Pro&utm_content=Account';
+    }
+    public function freemius_optin_heading()
+    {
+        return '<h2>' . \esc_html__('Congratulations on Your New Analytics! 🎉', 'independent-analytics') . '</h2>';
+    }
+    public function freemius_optin_text()
+    {
+        $html = '<p>' . \esc_html__("You've just taken the first step towards building a better website.", "independent-analytics") . '</p>';
+        $html .= '<br />';
+        $html .= '<p>' . \esc_html__("If you signup for our free email course, we’ll walk you through each feature in Independent Analytics, so you can learn how to analyze and optimize your website for growth.", "independent-analytics") . '</p>';
+        $html .= '<br />';
+        $html .= '<p><strong>' . \esc_html_x("Subscribe now and you'll receive our:", "What follows is a list of benefits", "independent-analytics") . '</strong></p>';
+        $html .= '<ul>';
+        $html .= '<li><span class="dashicons dashicons-yes-alt"></span> ' . \esc_html__('Free email tutorial series', 'independent-analytics') . '</li>';
+        $html .= '<li><span class="dashicons dashicons-yes-alt"></span> ' . \esc_html__('Subscriber-only sales announcements', 'independent-analytics') . '</li>';
+        $html .= '<li><span class="dashicons dashicons-yes-alt"></span> ' . \esc_html__('New feature updates', 'independent-analytics') . '</li>';
+        $html .= '<li><span class="dashicons dashicons-yes-alt"></span> ' . \esc_html__('Security alerts', 'independent-analytics') . '</li>';
+        $html .= '</ul>';
+        $html .= '<p>' . \esc_html('Subscribing will also share some basic info about your WordPress site with us, which helps us make Independent Analytics an even better plugin for everyone.', 'independent-analytics') . '</p>';
+        $html .= '<p class="rating">' . \sprintf(\esc_html__('Rated %s and trusted by over 100,000+ WordPress websites.', 'independent-analytics'), '<span class="star-container"><span class="dashicons dashicons-star-filled"></span><span class="dashicons dashicons-star-filled"></span><span class="dashicons dashicons-star-filled"></span><span class="dashicons dashicons-star-filled"></span><span class="dashicons dashicons-star-filled"></span></span>') . '</p>';
+        $html .= '<img src="' . \IAWPSCOPED\iawp_url_to('img/email-review.png') . '" />';
+        return $html;
     }
     public function add_admin_menu_pages()
     {
@@ -458,9 +488,16 @@ class Independent_Analytics
         }
         return $this->is_pmpro_support_enabled;
     }
+    public function is_fluent_cart_support_enabled() : bool
+    {
+        if (!\is_bool($this->is_fluent_cart_support_enabled)) {
+            $this->is_fluent_cart_support_enabled = $this->actually_check_if_fluent_cart_support_is_enabled();
+        }
+        return $this->is_fluent_cart_support_enabled;
+    }
     public function is_ecommerce_support_enabled() : bool
     {
-        return $this->is_woocommerce_support_enabled() || $this->is_surecart_support_enabled() || $this->is_edd_support_enabled() || $this->is_pmpro_support_enabled();
+        return $this->is_woocommerce_support_enabled() || $this->is_surecart_support_enabled() || $this->is_edd_support_enabled() || $this->is_pmpro_support_enabled() || $this->is_fluent_cart_support_enabled();
     }
     public function get_currency_code() : ?string
     {
@@ -476,6 +513,10 @@ class Independent_Analytics
         if ($this->is_pmpro_support_enabled()) {
             global $pmpro_default_currency;
             return $pmpro_default_currency;
+        }
+        if ($this->is_fluent_cart_support_enabled()) {
+            $settings = new \FluentCart\Api\StoreSettings();
+            return $settings->getCurrency();
         }
         return null;
     }
@@ -558,6 +599,16 @@ class Independent_Analytics
             return \false;
         }
         return \is_plugin_active('paid-memberships-pro-dev/paid-memberships-pro.php') || \is_plugin_active('paid-memberships-pro/paid-memberships-pro.php');
+    }
+    private function actually_check_if_fluent_cart_support_is_enabled() : bool
+    {
+        if (\IAWPSCOPED\iawp_is_free()) {
+            return \false;
+        }
+        if (\IAWP\Capability_Manager::can_only_view_authored_analytics()) {
+            return \false;
+        }
+        return \is_plugin_active('fluent-cart/fluent-cart.php');
     }
     private function get_menu_icon()
     {

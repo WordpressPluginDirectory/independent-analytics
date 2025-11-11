@@ -90,6 +90,7 @@ class Integrations
             // ],
             // eCommerce
             ['name' => 'WooCommerce', 'category' => 'ecommerce', 'plugin' => ['woocommerce/woocommerce.php']],
+            ['name' => 'FluentCart', 'category' => 'ecommerce', 'plugin' => ['fluent-cart/fluent-cart.php', 'fluent-cart-pro/fluent-cart-pro.php']],
             ['name' => 'SureCart', 'category' => 'ecommerce', 'plugin' => ['surecart/surecart.php']],
             ['name' => 'Easy Digital Downloads', 'category' => 'ecommerce', 'plugin' => ['easy-digital-downloads/easy-digital-downloads.php', 'easy-digital-downloads-pro/easy-digital-downloads.php'], 'filename' => 'edd'],
             ['name' => 'Paid Memberships Pro', 'category' => 'ecommerce', 'plugin' => ['paid-memberships-pro/paid-memberships-pro.php', 'paid-memberships-pro-dev/paid-memberships-pro.php'], 'filename' => 'pmpro'],

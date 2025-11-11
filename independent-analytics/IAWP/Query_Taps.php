@@ -52,8 +52,9 @@ class Query_Taps
             if (\in_array($config->group(), $campaign_groups)) {
                 $query->leftJoin(\IAWP\Tables::campaigns() . ' AS campaigns', 'sessions.campaign_id', '=', 'campaigns.campaign_id');
             }
-            if ($config->group() === 'link_pattern') {
+            if ($config->group() === 'link' || $config->group() === 'link_pattern') {
                 $query->leftJoin(\IAWP\Tables::clicked_links() . ' AS clicked_links', 'clicked_links.click_id', '=', 'clicks.click_id');
+                $query->leftJoin(\IAWP\Tables::links() . ' AS links', 'links.id', '=', 'clicked_links.link_id');
             }
             $query->where($column, '=', $config->id());
         };
@@ -88,9 +89,9 @@ class Query_Taps
             case 'utm_campaign':
                 return 'campaigns.utm_campaign_id';
             case 'link':
-                return 'clicks.click_target_id';
+                return 'links.id';
             case 'link_pattern':
-                return 'clicked_links.link_rule_id';
+                return 'links.link_rule_id';
             default:
                 return null;
         }

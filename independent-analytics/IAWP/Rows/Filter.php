@@ -47,7 +47,10 @@ class Filter
         $condition = $this->as_associative_array();
         $full_string = '';
         foreach ($condition as $key => $value) {
-            if (!\in_array($key, ['inclusion', 'column', 'operator', 'operand'])) {
+            if (!\in_array($key, ['inclusion', 'column', 'operator', 'operand', 'name'])) {
+                continue;
+            }
+            if ($key == 'column') {
                 continue;
             }
             $condition_string = '';
@@ -84,23 +87,10 @@ class Filter
                 } catch (\Throwable $e) {
                     $condition_string = $value;
                 }
-            } elseif ($key == 'column' && \str_contains($value, 'wc')) {
-                $condition_string = \str_replace(['_', '-'], ' ', $value);
-                $condition_string = \str_replace('wc', 'WC', $condition_string);
-            } elseif ($key == 'column' && String_Util::str_starts_with($condition['column'], 'form_submissions_for_')) {
-                $condition_string = \__('Submissions for', 'independent-analytics') . ' ' . Form::find_form_by_column_name($condition['column'])->title();
-            } elseif ($key == 'column' && String_Util::str_starts_with($condition['column'], 'form_conversion_rate_for_')) {
-                $condition_string = \__('Conversion rate for', 'independent-analytics') . ' ' . Form::find_form_by_column_name($condition['column'])->title();
-            } elseif ($key == 'column' && $condition['column'] == 'link_name') {
-                $condition_string = \__('Link Pattern', 'independent-analytics') . ' ';
-            } elseif ($key == 'column' && $value == 'url') {
-                $condition_string = 'URL ';
-            } elseif ($key != 'operand') {
-                $condition_string .= \ucwords(\str_replace('_', ' ', $value)) . ' ';
             } else {
                 $condition_string = $value;
             }
-            if ($key == 'column' || $key == 'operand') {
+            if ($key == 'name' || $key == 'operand') {
                 $condition_string = '<strong>' . $condition_string . '</strong> ';
             }
             $full_string .= $condition_string . ' ';
@@ -122,7 +112,7 @@ class Filter
     public function as_associative_array() : array
     {
         // The order of the elements here matters
-        return ['inclusion' => $this->inclusion, 'column' => $this->column->id(), 'operator' => $this->operator, 'operand' => $this->operand];
+        return ['inclusion' => $this->inclusion, 'name' => $this->column->name(), 'column' => $this->column->id(), 'operator' => $this->operator, 'operand' => $this->operand];
     }
     private function query_method(bool $in_or_chain, string $filter_type) : string
     {

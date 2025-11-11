@@ -29,6 +29,10 @@ class Tables
     {
         return self::prefix('link_rules');
     }
+    public static function links() : string
+    {
+        return self::prefix('links');
+    }
     public static function resources() : string
     {
         return self::prefix('resources');

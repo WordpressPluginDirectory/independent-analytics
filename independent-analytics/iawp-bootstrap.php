@@ -31,8 +31,8 @@ use IAWP\Utils\BladeOne;
 use IAWP\WP_Option_Cache_Bust;
 \define( 'IAWP_DIRECTORY', \rtrim( \plugin_dir_path( __FILE__ ), \DIRECTORY_SEPARATOR ) );
 \define( 'IAWP_URL', \rtrim( \plugin_dir_url( __FILE__ ), '/' ) );
-\define( 'IAWP_VERSION', '2.13.1' );
-\define( 'IAWP_DATABASE_VERSION', '50' );
+\define( 'IAWP_VERSION', '2.13.5' );
+\define( 'IAWP_DATABASE_VERSION', '52' );
 \define( 'IAWP_LANGUAGES_DIRECTORY', \dirname( \plugin_basename( __FILE__ ) ) . '/languages' );
 \define( 'IAWP_PLUGIN_FILE', __DIR__ . '/iawp.php' );
 if ( \file_exists( \IAWPSCOPED\iawp_path_to( 'vendor/scoper-autoload.php' ) ) ) {
@@ -351,11 +351,11 @@ function iawp() {
 } );
 \add_action( 'init', function () {
     Config_File_Manager::ensure();
+    ( new Geo_Database_Health_Check_Job() )->schedule();
+    ( new Migration_Fixer_Job() )->schedule();
     if ( \IAWPSCOPED\iawp_is_pro() ) {
         ( new Click_Processing_Job() )->schedule();
         ( new Module_Refresh_Job() )->schedule();
-        ( new Migration_Fixer_Job() )->schedule();
-        ( new Geo_Database_Health_Check_Job() )->schedule();
     }
     if ( \IAWPSCOPED\iawp()->is_surecart_support_enabled() ) {
         ( new SureCart_Event_Sync_Job() )->schedule();
@@ -368,6 +368,7 @@ function iawp() {
     Migrations\Migrations::handle_migration_18_error();
     Migrations\Migrations::handle_migration_22_error();
     Migrations\Migrations::handle_migration_29_error();
+    Migrations\Migrations::handle_migration_45_collation_error();
     Migrations\Migrations::handle_migration_46_error();
     Patch::patch_2_6_2_incorrect_email_report_schedule();
     Patch::patch_2_8_7_potential_duplicates();

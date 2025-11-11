@@ -303,8 +303,11 @@ class Submission_Listener
             } catch (\Throwable $e) {
             }
         }, 10, 1);
-        \add_action('et_pb_contact_form_submit', function ($values, $error, $form_info) {
+        \add_action('et_pb_contact_form_submit', function ($values, $has_error, $form_info) {
             try {
+                if ($has_error === \true) {
+                    return;
+                }
                 $submission = new \IAWP\Form_Submissions\Submission(24, \intval(1), Security::string(\__('Divi Contact Form', 'independent-analytics')));
                 $submission->record_submission();
             } catch (\Throwable $e) {

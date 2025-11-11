@@ -49,7 +49,7 @@
                         'report_name'       => esc_html__('Overview', 'independent-analytics'),
                         'report_type'       => 'overview',
                         'reports'           => null,
-                        'collapsed_label'   => esc_html__('Open overview', 'independent-analytics'),
+                        'collapsed_label'   => esc_html__('Overview report', 'independent-analytics'),
                         'supports_saved_reports' => false,
                         'url'               => iawp_dashboard_url(['tab' => 'overview']),
                         'external'          => false,
@@ -63,10 +63,7 @@
                         'report_name'       => esc_html__('Real-time', 'independent-analytics'),
                         'report_type'       => 'real-time',
                         'reports'           => null,
-                        'collapsed_label'   => esc_html__(
-                            'Open Real-time analytics',
-                            'independent-analytics'
-                        ),
+                        'collapsed_label'   => esc_html__('Real-time report','independent-analytics'),
                         'supports_saved_reports' => false,
                         'url'               => iawp_dashboard_url(['tab' => 'real-time']),
                         'external'          => false,
