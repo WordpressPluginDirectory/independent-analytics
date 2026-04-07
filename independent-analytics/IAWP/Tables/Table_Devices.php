@@ -2,10 +2,10 @@
 
 namespace IAWP\Tables;
 
+use IAWP\ColumnOptions\Options;
 use IAWP\ColumnOptions\Plugins\DeviceBrowsers;
 use IAWP\ColumnOptions\Plugins\DeviceOperatingSystems;
 use IAWP\ColumnOptions\Plugins\DeviceTypes;
-use IAWP\ColumnOptions\Options;
 use IAWP\Rows\Device_Browsers;
 use IAWP\Rows\Device_OSS;
 use IAWP\Rows\Device_Types;

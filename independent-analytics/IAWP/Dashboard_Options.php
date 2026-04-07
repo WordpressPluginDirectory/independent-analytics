@@ -158,13 +158,19 @@ class Dashboard_Options
      */
     public function relative_range_id() : ?string
     {
-        $relative_range_id = $this->report->relative_range_id ?? null;
-        if (!$this->has_exact_range() && $relative_range_id === null) {
-            return 'LAST_THIRTY';
-        } elseif ($this->has_exact_range()) {
+        if ($this->has_exact_range()) {
             return null;
-        } elseif (Relative_Date_Range::is_valid_range($relative_range_id) === \false) {
-            return 'LAST_THIRTY';
+        }
+        $relative_range_id = $this->report->relative_range_id ?? null;
+        $default = 'LAST_THIRTY';
+        if (\IAWP\Env::get_tab() === 'journeys') {
+            $default = 'TODAY';
+        }
+        if ($relative_range_id === null) {
+            return $default;
+        }
+        if (Relative_Date_Range::is_valid_range($relative_range_id) === \false) {
+            return $default;
         }
         return $relative_range_id;
     }

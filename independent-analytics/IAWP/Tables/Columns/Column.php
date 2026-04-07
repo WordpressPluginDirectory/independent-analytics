@@ -2,7 +2,6 @@
 
 namespace IAWP\Tables\Columns;
 
-use IAWP\ColumnOptions\Option;
 use IAWP\ColumnOptions\Options;
 use IAWP\Plugin_Group_Option;
 use IAWP\Tables\Groups\Group;
@@ -14,6 +13,7 @@ class Column implements Plugin_Group_Option
     private $plugin_group;
     private $plugin_group_header;
     private $visible;
+    private $can_be_filtered;
     private $type;
     private $exportable;
     private ?Options $options;
@@ -33,6 +33,7 @@ class Column implements Plugin_Group_Option
         $this->plugin_group = $attributes['plugin_group'] ?? 'general';
         $this->plugin_group_header = $attributes['plugin_group_header'] ?? null;
         $this->visible = $attributes['visible'] ?? \false;
+        $this->can_be_filtered = $attributes['can_be_filtered'] ?? \true;
         $this->type = $attributes['type'];
         $this->exportable = $attributes['exportable'] ?? \true;
         $this->options = $attributes['options'] ?? null;
@@ -103,6 +104,10 @@ class Column implements Plugin_Group_Option
     public function is_visible() : bool
     {
         return $this->visible;
+    }
+    public function can_be_filtered() : bool
+    {
+        return $this->can_be_filtered;
     }
     public function is_member_of_plugin_group(string $plugin_group) : bool
     {

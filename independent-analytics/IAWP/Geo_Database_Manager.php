@@ -9,9 +9,9 @@ class Geo_Database_Manager
 {
     // 🚨🚨 Updating the database? Follow the wiki: 🚨🚨
     // https://github.com/andrewjmead/independent-analytics/wiki/Update-the-Geo-Database
-    private $zip_download_url = 'https://assets.independentwp.com/iawp-geo-db-7.mmdb.zip';
-    private $raw_download_url = 'https://assets.independentwp.com/iawp-geo-db-7.mmdb';
-    private $database_checksum = 'e26ab675eccee3de08e4cd2aceb5a217';
+    private $zip_download_url = 'https://assets.independentwp.com/iawp-geo-db-8.mmdb.zip';
+    private $raw_download_url = 'https://assets.independentwp.com/iawp-geo-db-8.mmdb';
+    private $database_checksum = '1810ceaf24034a74a3f4e9368a52aa30';
     public function health_check() : void
     {
         if ($this->is_geo_tracking_disabled()) {

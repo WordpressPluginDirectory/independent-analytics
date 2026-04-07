@@ -72,11 +72,46 @@ class REST_API
         $track_view_url = \get_rest_url(null, '/iawp/search');
         $track_click_url = \IAWPSCOPED\iawp_url_to('/iawp-click-endpoint.php');
         $link_rules_json = \json_encode(Link_Rule_Finder::cached_link_rules());
+        $is_using_complianz = \function_exists('cmplz_integration_plugin_is_enabled') && \cmplz_integration_plugin_is_enabled('independent-analytics');
+        $attributes = '';
+        if ($is_using_complianz) {
+            $attributes = \wp_sanitize_script_attributes(['type' => 'text/plain', 'data-category' => 'statistics', 'data-service' => 'independent-analytics']);
+            ?>
+            <script>
+                document.addEventListener('cmplz_enable_category', (event) => {
+                    if(event.detail.category === 'statistics') {
+                        const event = new Event("iawpSearch");
+                        document.dispatchEvent(event)
+                    }
+                })
+            </script>
+        <?php 
+        }
         ?>
-        <script>
+        <script id="independent-analytics-script" <?php 
+        echo $attributes;
+        ?>  >
             // Do not change this comment line otherwise Speed Optimizer won't be able to detect this script
 
             (function () {
+                function sendRequest(url, body) {
+                    if(!window.fetch) {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open("POST", url, true);
+                        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                        xhr.send(JSON.stringify(body))
+                        return
+                    }
+
+                    const request = fetch(url, {
+                        method: 'POST',
+                        body: JSON.stringify(body),
+                        keepalive: true,
+                        headers: {
+                            'Content-Type': 'application/json;charset=UTF-8'
+                        }
+                    });
+                }
                 const calculateParentDistance = (child, parent) => {
                     let count = 0;
                     let currentElement = child;
@@ -251,17 +286,57 @@ class REST_API
         ?>
                     };
 
-                    if (navigator.sendBeacon) {
-                        let blob = new Blob([JSON.stringify(body)], {
-                            type: "application/json"
-                        });
-                        navigator.sendBeacon(url, blob);
-                    } else {
-                        const xhr = new XMLHttpRequest();
-                        xhr.open("POST", url, true);
-                        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-                        xhr.send(JSON.stringify(body))
+                    sendRequest(url, body)
+                }
+                let hasSearched = false;
+                function search() {
+                    if(hasSearched) {
+                        return;
                     }
+                    hasSearched = true;
+
+                    if (document.hasOwnProperty("visibilityState") && document.visibilityState === "prerender") {
+                        return;
+                    }
+
+                    <?php 
+        if (!\defined('IAWP_TESTING')) {
+            ?>
+                        if (navigator.webdriver || /bot|crawler|spider|crawling|semrushbot|chrome-lighthouse/i.test(navigator.userAgent)) {
+                            return;
+                        }
+                    <?php 
+        }
+        ?>
+
+                    let referrer_url = null;
+
+                    if (typeof document.referrer === 'string' && document.referrer.length > 0) {
+                        referrer_url = document.referrer;
+                    }
+
+                    const params = location.search.slice(1).split('&').reduce((acc, s) => {
+                        const [k, v] = s.split('=');
+                        return Object.assign(acc, {[k]: v});
+                    }, {});
+
+                    const url = "<?php 
+        echo $track_view_url;
+        ?>";
+                    const body = {
+                        referrer_url,
+                        utm_source: params.utm_source,
+                        utm_medium: params.utm_medium,
+                        utm_campaign: params.utm_campaign,
+                        utm_term: params.utm_term,
+                        utm_content: params.utm_content,
+                        gclid: params.gclid,
+                        ...<?php 
+        echo \json_encode($data);
+        ?>
+                    };
+
+                    sendRequest(url, body)
                 }
                 document.addEventListener('mousedown', function (event) {
                     <?php 
@@ -350,58 +425,10 @@ class REST_API
                     track(element)
                 }, true)
                 document.addEventListener("DOMContentLoaded", function (e) {
-                    if (document.hasOwnProperty("visibilityState") && document.visibilityState === "prerender") {
-                        return;
-                    }
-
-                    <?php 
-        if (!\defined('IAWP_TESTING')) {
-            ?>
-                        if (navigator.webdriver || /bot|crawler|spider|crawling|semrushbot|chrome-lighthouse/i.test(navigator.userAgent)) {
-                            return;
-                        }
-                    <?php 
-        }
-        ?>
-
-                    let referrer_url = null;
-
-                    if (typeof document.referrer === 'string' && document.referrer.length > 0) {
-                        referrer_url = document.referrer;
-                    }
-
-                    const params = location.search.slice(1).split('&').reduce((acc, s) => {
-                        const [k, v] = s.split('=');
-                        return Object.assign(acc, {[k]: v});
-                    }, {});
-
-                    const url = "<?php 
-        echo $track_view_url;
-        ?>";
-                    const body = {
-                        referrer_url,
-                        utm_source: params.utm_source,
-                        utm_medium: params.utm_medium,
-                        utm_campaign: params.utm_campaign,
-                        utm_term: params.utm_term,
-                        utm_content: params.utm_content,
-                        gclid: params.gclid,
-                        ...<?php 
-        echo \json_encode($data);
-        ?>
-                    };
-
-                    if (navigator.sendBeacon) {
-                        let blob = new Blob([JSON.stringify(body)], {
-                            type: "application/json"
-                        });
-                        navigator.sendBeacon(url, blob);
-                    } else {
-                        const xhr = new XMLHttpRequest();
-                        xhr.open("POST", url, true);
-                        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-                        xhr.send(JSON.stringify(body))
-                    }
+                    search();
+                });
+                document.addEventListener("iawpSearch", function (e) {
+                    search();
                 });
             })();
         </script>

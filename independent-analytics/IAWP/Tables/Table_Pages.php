@@ -2,9 +2,9 @@
 
 namespace IAWP\Tables;
 
+use IAWP\ColumnOptions\Options;
 use IAWP\ColumnOptions\Plugins\Authors;
 use IAWP\ColumnOptions\Plugins\Categories;
-use IAWP\ColumnOptions\Options;
 use IAWP\ColumnOptions\Plugins\PageTypes;
 use IAWP\Rows\Pages;
 use IAWP\Statistics\Page_Statistics;

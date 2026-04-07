@@ -2,6 +2,7 @@
 
 namespace IAWP\AJAX;
 
+use IAWPSCOPED\Carbon\CarbonImmutable;
 use IAWP\Capability_Manager;
 use IAWP\Click_Tracking;
 use IAWP\Illuminate_Builder;
@@ -15,6 +16,10 @@ class Edit_Link extends \IAWP\AJAX\AJAX
         return 'iawp_edit_link';
     }
     protected function requires_pro() : bool
+    {
+        return \true;
+    }
+    protected function requires_write_access() : bool
     {
         return \true;
     }
@@ -57,11 +62,11 @@ class Edit_Link extends \IAWP\AJAX\AJAX
         if ($link_rule) {
             Illuminate_Builder::new()->from(Tables::link_rules())->where('link_rule_id', '=', $link_id)->update($link_properties);
         } else {
-            $link_properties['created_at'] = (new \DateTime())->format('Y-m-d H:i:s');
+            $link_properties['created_at'] = CarbonImmutable::now('utc')->format('Y-m-d H:i:s');
             $link_id = Illuminate_Builder::new()->from(Tables::link_rules())->insertGetId($link_properties);
         }
         // Fetch a fresh copy
         $link_rule = Click_Tracking\Link_Rule::find($link_id);
-        \wp_send_json_success(['shouldShowCacheMessage' => \get_option('iawp_click_tracking_cache_cleared') === \false, 'html' => \IAWPSCOPED\iawp_blade()->run('click-tracking.link', ['link' => $link_rule->to_array(), 'types' => Click_Tracking::types(), 'extensions' => Click_Tracking::extensions(), 'protocols' => Click_Tracking::protocols()])]);
+        \wp_send_json_success(['shouldShowCacheMessage' => \get_option('iawp_click_tracking_cache_cleared') === \false, 'html' => \IAWPSCOPED\iawp_render('click-tracking.link', ['link' => $link_rule->to_array(), 'types' => Click_Tracking::types(), 'extensions' => Click_Tracking::extensions(), 'protocols' => Click_Tracking::protocols()])]);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace IAWP;
 
-use IAWP\Click_Tracking\Config_File_Manager;
+use IAWPSCOPED\Carbon\CarbonImmutable;
 use IAWP\Utils\Salt;
 use IAWP\Utils\Timezone;
 /** @internal */
@@ -10,22 +10,22 @@ class Cron_Manager
 {
     public function __construct()
     {
-        \add_action('update_option_iawp_refresh_salt', [$this, 'schedule_refresh_salt'], 10, 0);
-        \add_action('add_option_iawp_refresh_salt', [$this, 'schedule_refresh_salt'], 10, 0);
-        \add_action('iawp_refresh_salt', [$this, 'refresh_salt']);
+        \add_action('update_option_iawp_visitor_salt_refresh_interval', [$this, 'schedule'], 10, 0);
+        \add_action('add_option_iawp_visitor_salt_refresh_interval', [$this, 'schedule'], 10, 0);
+        \add_action('iawp_refresh_salt', [$this, 'handle']);
     }
-    public function schedule_refresh_salt()
+    public function schedule()
     {
         \wp_unschedule_hook('iawp_refresh_salt');
-        if (\get_option('iawp_refresh_salt') !== \true && \get_option('iawp_refresh_salt') !== '1') {
+        $interval = \IAWP\VisitorSaltRefreshInterval::interval();
+        if ($interval === 'never') {
             return;
         }
-        $refresh_time = new \DateTime('tomorrow midnight', Timezone::site_timezone());
-        \wp_schedule_event($refresh_time->getTimestamp(), 'daily', 'iawp_refresh_salt');
+        $refresh_time = CarbonImmutable::tomorrow(Timezone::site_timezone())->startOfDay();
+        \wp_schedule_event($refresh_time->getTimestamp(), $interval, 'iawp_refresh_salt');
     }
-    public function refresh_salt()
+    public function handle()
     {
         Salt::refresh_visitor_token_salt();
-        Config_File_Manager::recreate();
     }
 }

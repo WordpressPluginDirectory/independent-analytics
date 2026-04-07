@@ -17,11 +17,11 @@ use IAWP\Tables\Groups\Group;
 use IAWP\Tables\Groups\Groups;
 use IAWP\Utils\CSV;
 use IAWP\Utils\Currency;
+use IAWP\Utils\Format;
 use IAWP\Utils\Number_Formatter;
 use IAWP\Utils\Security;
 use IAWP\Utils\Timezone;
 use IAWP\Utils\URL;
-use IAWP\Utils\WordPress_Site_Date_Format_Pattern;
 use IAWPSCOPED\Illuminate\Support\Collection;
 use IAWPSCOPED\Illuminate\Support\Str;
 /** @internal */
@@ -64,21 +64,25 @@ abstract class Table
         }
         return $visible_columns;
     }
+    public function allow_downloading() : bool
+    {
+        return \true;
+    }
     public function group() : Group
     {
         return $this->group;
     }
     public function column_picker_html() : string
     {
-        return \IAWPSCOPED\iawp_blade()->run('plugin-group-options', ['option_type' => 'columns', 'option_name' => \__('Toggle Columns', 'independent-analytics'), 'option_icon' => 'columns', 'plugin_groups' => Plugin_Group::get_plugin_groups(), 'options' => $this->get_columns(\true)]);
+        return \IAWPSCOPED\iawp_render('plugin-group-options', ['option_type' => 'columns', 'option_name' => \__('Toggle Columns', 'independent-analytics'), 'option_icon' => 'columns', 'plugin_groups' => Plugin_Group::get_plugin_groups(), 'options' => $this->get_columns(\true)]);
     }
     public function get_table_toolbar_markup()
     {
-        return \IAWPSCOPED\iawp_blade()->run('tables.table-toolbar', ['plugin_groups' => Plugin_Group::get_plugin_groups(), 'columns' => $this->get_columns(\true), 'groups' => $this->groups(), 'current_group' => $this->group()]);
+        return \IAWPSCOPED\iawp_render('tables.table-toolbar', ['plugin_groups' => Plugin_Group::get_plugin_groups(), 'columns' => $this->get_columns(\true), 'groups' => $this->groups(), 'current_group' => $this->group()]);
     }
     public function get_table_markup(string $sort_column, string $sort_direction)
     {
-        return \IAWPSCOPED\iawp_blade()->run('tables.table', ['table' => $this, 'all_columns' => $this->get_columns(), 'visible_column_count' => $this->visible_column_count(), 'number_of_shown_rows' => 0, 'rows' => [], 'render_skeleton' => \true, 'page_size' => \IAWPSCOPED\iawp()->pagination_page_size(), 'sort_column' => $sort_column, 'sort_direction' => $sort_direction, 'has_campaigns' => Campaign_Builder::has_campaigns()]);
+        return \IAWPSCOPED\iawp_render('tables.table', ['table' => $this, 'all_columns' => $this->get_columns(), 'visible_column_count' => $this->visible_column_count(), 'number_of_shown_rows' => 0, 'rows' => [], 'render_skeleton' => \true, 'page_size' => \IAWPSCOPED\iawp()->pagination_page_size(), 'sort_column' => $sort_column, 'sort_direction' => $sort_direction, 'has_campaigns' => Campaign_Builder::has_campaigns()]);
     }
     public function set_statistics(Statistics $statistics)
     {
@@ -139,11 +143,11 @@ abstract class Table
         } elseif ($column_id == 'author') {
             return Security::html($row->avatar()) . ' ' . Security::string($row->author());
         } elseif ($column_id == 'date') {
-            return Security::string(\date(WordPress_Site_Date_Format_Pattern::for_php(), \strtotime($row->date())));
+            return Security::string(\date(Format::date(), \strtotime($row->date())));
         } elseif ($column_id == 'type' && \method_exists($row, 'icon') && \method_exists($row, 'type')) {
             return $row->icon(0) . ' ' . Security::string($row->type());
-        } elseif ($column_id == 'referrer' && $row->has_link()) {
-            return '<a href="' . \esc_url($row->referrer_url()) . '" target="_blank" class="external-link">' . Security::string($row->referrer()) . '<span class="dashicons dashicons-external"></span></a>';
+        } elseif ($column_id == 'referrer') {
+            return \IAWPSCOPED\iawp_render('tables.referrer-column', ['row' => $row]);
         } elseif ($column_id === 'device_type') {
             return Icon_Directory_Factory::device_types()->find($row->device_type()) . Security::string($row->device_type());
         } elseif ($column_id === 'browser') {
@@ -163,7 +167,7 @@ abstract class Table
             if (\is_string($value) && URL::new($value)->is_valid_url()) {
                 return '<a href="' . \esc_url($value) . '" target="_blank" class="external-link">' . \esc_url(\urldecode($value)) . '<span class="dashicons dashicons-external"></span></a>';
             }
-            return $value;
+            return Security::string($value);
         } else {
             return Security::string($row->{$column_id}());
         }
@@ -202,10 +206,12 @@ abstract class Table
         </div>
         <div class="filter-parent">
             <?php 
-        echo $this->filters()->get_filters_html($this->get_columns());
+        echo $this->filters()->get_filters_html($this->columns_that_can_be_filtered());
         ?>
         </div>
-        <div class="download-options-parent" data-controller="modal">
+        <div class="download-options-parent <?php 
+        echo $this->allow_downloading() ? "" : "hide";
+        ?>" data-controller="modal">
             <div class="modal-parent downloads">
                 <button id="download-options" data-modal-target="modalButton" data-action="click->modal#toggleModal" class="download-options">
                     <?php 
@@ -256,7 +262,7 @@ abstract class Table
     }
     public function filters_template_html() : string
     {
-        return $this->filters()->get_condition_html($this->get_columns());
+        return $this->filters()->get_condition_html($this->columns_that_can_be_filtered());
     }
     public function filters_condition_buttons_html(array $filters) : string
     {
@@ -305,7 +311,7 @@ abstract class Table
         } elseif (\in_array($column_id, ['bounce_route', 'views_growth', 'visitors_growth', 'form_conversion_rate']) || Str::startsWith($column_id, 'form_conversion_rate_for_')) {
             return Number_Formatter::percent($value);
         } elseif ($column_id === 'date') {
-            return \date(WordPress_Site_Date_Format_Pattern::for_php(), \strtotime($value));
+            return \date(Format::date(), \strtotime($value));
         } elseif ($column_id === 'average_session_duration' || $column_id === 'average_view_duration') {
             return Number_Formatter::second_to_minute_timestamp($value);
         } elseif ($column_id === 'views_per_session') {
@@ -329,11 +335,15 @@ abstract class Table
             return $this->sanitize_filter($filter);
         })->filter()->values()->all();
     }
+    public function resolve_filter_conflicts(array $filters, string $filter_logic) : array
+    {
+        return $filters;
+    }
     public function sanitize_filter(array $filter) : ?Filter
     {
         // column, inclusion, operator, operand
         $column = $this->get_column($filter['column']);
-        if (\is_null($column)) {
+        if ($column === null || !$column->can_be_filtered()) {
             return null;
         }
         $valid_inclusions = ['include', 'exclude'];
@@ -386,9 +396,9 @@ abstract class Table
     public function get_rendered_template(array $rows, bool $just_rows, string $sort_column, string $sort_direction)
     {
         if ($just_rows) {
-            return \IAWPSCOPED\iawp_blade()->run('tables.rows', ['table' => $this, 'all_columns' => $this->get_columns(), 'visible_column_count' => $this->visible_column_count(), 'number_of_shown_rows' => \count($rows), 'rows' => $rows, 'render_skeleton' => \false, 'page_size' => \IAWPSCOPED\iawp()->pagination_page_size(), 'sort_column' => $sort_column, 'sort_direction' => $sort_direction, 'has_campaigns' => Campaign_Builder::has_campaigns()]);
+            return \IAWPSCOPED\iawp_render('tables.rows', ['table' => $this, 'all_columns' => $this->get_columns(), 'visible_column_count' => $this->visible_column_count(), 'number_of_shown_rows' => \count($rows), 'rows' => $rows, 'render_skeleton' => \false, 'page_size' => \IAWPSCOPED\iawp()->pagination_page_size(), 'sort_column' => $sort_column, 'sort_direction' => $sort_direction, 'has_campaigns' => Campaign_Builder::has_campaigns()]);
         }
-        return \IAWPSCOPED\iawp_blade()->run('tables.table', ['table' => $this, 'all_columns' => $this->get_columns(), 'visible_column_count' => $this->visible_column_count(), 'number_of_shown_rows' => \count($rows), 'rows' => $rows, 'render_skeleton' => \false, 'page_size' => \IAWPSCOPED\iawp()->pagination_page_size(), 'sort_column' => $sort_column, 'sort_direction' => $sort_direction, 'has_campaigns' => Campaign_Builder::has_campaigns()]);
+        return \IAWPSCOPED\iawp_render('tables.table', ['table' => $this, 'all_columns' => $this->get_columns(), 'visible_column_count' => $this->visible_column_count(), 'number_of_shown_rows' => \count($rows), 'rows' => $rows, 'render_skeleton' => \false, 'page_size' => \IAWPSCOPED\iawp()->pagination_page_size(), 'sort_column' => $sort_column, 'sort_direction' => $sort_direction, 'has_campaigns' => Campaign_Builder::has_campaigns()]);
     }
     /**
      * @return Column[]
@@ -406,18 +416,18 @@ abstract class Table
         if (\is_null($this->visible_columns) || \count($this->visible_columns) === 0) {
             return $columns_for_group;
         }
-        if (!$this->is_new_group) {
+        if ($this->is_new_group) {
             return \array_map(function ($column) {
-                $column->set_visibility(\in_array($column->id(), $this->visible_columns));
+                if ($column->is_group_dependent()) {
+                    $column->set_visibility(\true);
+                } else {
+                    $column->set_visibility(\in_array($column->id(), $this->visible_columns));
+                }
                 return $column;
             }, $columns_for_group);
         }
         return \array_map(function ($column) {
-            if ($column->is_group_dependent()) {
-                $column->set_visibility(\true);
-            } elseif (!\in_array($column->id(), $this->visible_columns)) {
-                $column->set_visibility(\false);
-            }
+            $column->set_visibility(\in_array($column->id(), $this->visible_columns));
             return $column;
         }, $columns_for_group);
     }
@@ -465,5 +475,9 @@ abstract class Table
     private function filters()
     {
         return $this->filters;
+    }
+    private function columns_that_can_be_filtered() : array
+    {
+        return Collection::make($this->get_columns())->filter(fn(Column $column) => $column->can_be_filtered())->all();
     }
 }

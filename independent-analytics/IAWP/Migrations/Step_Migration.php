@@ -77,7 +77,16 @@ abstract class Step_Migration
                 \update_option('iawp_last_finished_migration_step', $index + 1, \true);
                 continue;
             }
-            $initial_response = $wpdb->query($query);
+            try {
+                $initial_response = $wpdb->query($query);
+            } catch (\Throwable $error) {
+                $max_connections_error = 'SQLSTATE[HY000] [1203]';
+                if (Str::startsWith($error->getMessage(), $max_connections_error)) {
+                    $initial_response = \false;
+                } else {
+                    throw $error;
+                }
+            }
             if ($initial_response === \false) {
                 \sleep(1);
                 \update_option('iawp_migration_error_original_error_message', \trim($wpdb->last_error), \true);

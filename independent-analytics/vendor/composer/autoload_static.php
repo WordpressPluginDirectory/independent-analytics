@@ -23,7 +23,7 @@ class ComposerStaticInitdfeae848aa2481edc10e87777b00ef6c
     );
 
     public static $prefixLengthsPsr4 = array (
-        'S' => 
+        'S' =>
         array (
             'Symfony\\Polyfill\\Php80\\' => 23,
             'Symfony\\Polyfill\\Php73\\' => 23,
@@ -32,7 +32,7 @@ class ComposerStaticInitdfeae848aa2481edc10e87777b00ef6c
             'Symfony\\Polyfill\\Intl\\Grapheme\\' => 31,
             'Symfony\\Polyfill\\Ctype\\' => 23,
         ),
-        'I' => 
+        'I' =>
         array (
             'IAWP\\' => 5,
             'IAWPSCOPED\\voku\\' => 16,
@@ -63,131 +63,131 @@ class ComposerStaticInitdfeae848aa2481edc10e87777b00ef6c
     );
 
     public static $prefixDirsPsr4 = array (
-        'Symfony\\Polyfill\\Php80\\' => 
+        'Symfony\\Polyfill\\Php80\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
         ),
-        'Symfony\\Polyfill\\Php73\\' => 
+        'Symfony\\Polyfill\\Php73\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php73',
         ),
-        'Symfony\\Polyfill\\Mbstring\\' => 
+        'Symfony\\Polyfill\\Mbstring\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
         ),
-        'Symfony\\Polyfill\\Intl\\Normalizer\\' => 
+        'Symfony\\Polyfill\\Intl\\Normalizer\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer',
         ),
-        'Symfony\\Polyfill\\Intl\\Grapheme\\' => 
+        'Symfony\\Polyfill\\Intl\\Grapheme\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme',
         ),
-        'Symfony\\Polyfill\\Ctype\\' => 
+        'Symfony\\Polyfill\\Ctype\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-ctype',
         ),
-        'IAWP\\' => 
+        'IAWP\\' =>
         array (
             0 => __DIR__ . '/../..' . '/IAWP',
         ),
-        'IAWPSCOPED\\voku\\' => 
+        'IAWPSCOPED\\voku\\' =>
         array (
             0 => __DIR__ . '/..' . '/voku/portable-ascii/src/voku',
         ),
-        'IAWPSCOPED\\eftec\\bladeone\\' => 
+        'IAWPSCOPED\\eftec\\bladeone\\' =>
         array (
             0 => __DIR__ . '/..' . '/eftec/bladeone/lib',
         ),
-        'IAWPSCOPED\\Symfony\\Contracts\\Translation\\' => 
+        'IAWPSCOPED\\Symfony\\Contracts\\Translation\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/translation-contracts',
         ),
-        'IAWPSCOPED\\Symfony\\Contracts\\Service\\' => 
+        'IAWPSCOPED\\Symfony\\Contracts\\Service\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/service-contracts',
         ),
-        'IAWPSCOPED\\Symfony\\Component\\Translation\\' => 
+        'IAWPSCOPED\\Symfony\\Component\\Translation\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/translation',
         ),
-        'IAWPSCOPED\\Symfony\\Component\\String\\' => 
+        'IAWPSCOPED\\Symfony\\Component\\String\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/string',
         ),
-        'IAWPSCOPED\\Symfony\\Component\\Console\\' => 
+        'IAWPSCOPED\\Symfony\\Component\\Console\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/console',
         ),
-        'IAWPSCOPED\\Psr\\SimpleCache\\' => 
+        'IAWPSCOPED\\Psr\\SimpleCache\\' =>
         array (
             0 => __DIR__ . '/..' . '/psr/simple-cache/src',
         ),
-        'IAWPSCOPED\\Psr\\Http\\Message\\' => 
+        'IAWPSCOPED\\Psr\\Http\\Message\\' =>
         array (
             0 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
-        'IAWPSCOPED\\Psr\\Container\\' => 
+        'IAWPSCOPED\\Psr\\Container\\' =>
         array (
             0 => __DIR__ . '/..' . '/psr/container/src',
         ),
-        'IAWPSCOPED\\Psr\\Clock\\' => 
+        'IAWPSCOPED\\Psr\\Clock\\' =>
         array (
             0 => __DIR__ . '/..' . '/psr/clock/src',
         ),
-        'IAWPSCOPED\\Proper\\' => 
+        'IAWPSCOPED\\Proper\\' =>
         array (
             0 => __DIR__ . '/..' . '/andrewmead/wordpress-proper/source',
             1 => __DIR__ . '/..' . '/andrewmead/wordpress-proper/tests',
         ),
-        'IAWPSCOPED\\MaxMind\\Db\\' => 
+        'IAWPSCOPED\\MaxMind\\Db\\' =>
         array (
             0 => __DIR__ . '/..' . '/maxmind-db/reader/src/MaxMind/Db',
         ),
-        'IAWPSCOPED\\League\\Uri\\' => 
+        'IAWPSCOPED\\League\\Uri\\' =>
         array (
             0 => __DIR__ . '/..' . '/league/uri/src',
             1 => __DIR__ . '/..' . '/league/uri-interfaces/src',
         ),
-        'IAWPSCOPED\\League\\Csv\\' => 
+        'IAWPSCOPED\\League\\Csv\\' =>
         array (
             0 => __DIR__ . '/..' . '/league/csv/src',
         ),
-        'IAWPSCOPED\\Illuminate\\Support\\' => 
+        'IAWPSCOPED\\Illuminate\\Support\\' =>
         array (
             0 => __DIR__ . '/..' . '/illuminate/support',
             1 => __DIR__ . '/..' . '/illuminate/collections',
             2 => __DIR__ . '/..' . '/illuminate/macroable',
         ),
-        'IAWPSCOPED\\Illuminate\\Database\\' => 
+        'IAWPSCOPED\\Illuminate\\Database\\' =>
         array (
             0 => __DIR__ . '/..' . '/illuminate/database',
         ),
-        'IAWPSCOPED\\Illuminate\\Contracts\\' => 
+        'IAWPSCOPED\\Illuminate\\Contracts\\' =>
         array (
             0 => __DIR__ . '/..' . '/illuminate/contracts',
         ),
-        'IAWPSCOPED\\Illuminate\\Container\\' => 
+        'IAWPSCOPED\\Illuminate\\Container\\' =>
         array (
             0 => __DIR__ . '/..' . '/illuminate/container',
         ),
-        'IAWPSCOPED\\IPLib\\' => 
+        'IAWPSCOPED\\IPLib\\' =>
         array (
             0 => __DIR__ . '/..' . '/mlocati/ip-lib/src',
         ),
-        'IAWPSCOPED\\Doctrine\\Inflector\\' => 
+        'IAWPSCOPED\\Doctrine\\Inflector\\' =>
         array (
             0 => __DIR__ . '/..' . '/doctrine/inflector/lib/Doctrine/Inflector',
         ),
-        'IAWPSCOPED\\DeviceDetector\\' => 
+        'IAWPSCOPED\\DeviceDetector\\' =>
         array (
             0 => __DIR__ . '/..' . '/matomo/device-detector',
         ),
-        'IAWPSCOPED\\Carbon\\Doctrine\\' => 
+        'IAWPSCOPED\\Carbon\\Doctrine\\' =>
         array (
             0 => __DIR__ . '/..' . '/carbonphp/carbon-doctrine-types/src/Carbon/Doctrine',
         ),
-        'IAWPSCOPED\\Carbon\\' => 
+        'IAWPSCOPED\\Carbon\\' =>
         array (
             0 => __DIR__ . '/..' . '/nesbot/carbon/src/Carbon',
         ),

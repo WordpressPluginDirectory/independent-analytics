@@ -38,4 +38,10 @@
     <p class="iawp-referrer-box-value" data-testid="geolocation"><?php esc_html_e('Unknown', 'independent-analytics'); ?></p>
 <?php endif; ?>
 
-<p class="iawp-referrer-box-attribution"><?php printf(esc_html__('Powered by %s.', 'independent-analytics'), 'Independent Analytics'); ?></p>
+<p class="iawp-view-journey">
+    <a href="<?php echo esc_url($journey_url); ?>"><span class="dashicons dashicons-admin-users"></span> <?php esc_html_e('View full journey', 'independent-analytics'); ?> <span class="iawp-arrow">&rarr;</span></a>
+</p>
+
+<p class="iawp-referrer-box-attribution"><?php 
+    printf(esc_html__('Powered by %s.', 'independent-analytics'), iawp_is_pro() ? 'Independent Analytics Pro' : 'Independent Analytics'); 
+?></p>

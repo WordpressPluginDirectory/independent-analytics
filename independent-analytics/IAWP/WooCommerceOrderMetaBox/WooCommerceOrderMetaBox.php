@@ -6,6 +6,7 @@ use Automattic\WooCommerce\Internal\DataStores\Orders\CustomOrdersTableControlle
 use IAWPSCOPED\Carbon\CarbonImmutable;
 use IAWP\Illuminate_Builder;
 use IAWP\Tables;
+use IAWP\Utils\Format;
 use IAWP\Utils\Timezone;
 use IAWPSCOPED\Illuminate\Database\Query\JoinClause;
 /** @internal */
@@ -32,11 +33,17 @@ class WooCommerceOrderMetaBox
         if ($this->record === null) {
             return;
         }
-        echo \IAWPSCOPED\iawp_render('woocommerce-order-meta-box', ['record' => $this->record]);
+        echo \IAWPSCOPED\iawp_render('woocommerce-order-meta-box', ['record' => $this->record, 'journey_url' => $this->journey_url()]);
+    }
+    private function journey_url() : string
+    {
+        $session_id = $this->record->session_id;
+        $visitor_id = $this->record->visitor_id;
+        return \add_query_arg(['visitor' => $visitor_id, 'session' => $session_id], \admin_url('admin.php?page=independent-analytics-visitor'));
     }
     private function record() : ?object
     {
-        $query = Illuminate_Builder::new()->select('initial_resources.cached_title AS initial_page_title', 'initial_resources.cached_url AS initial_page_url', 'sessions.total_views', 'sessions.created_at AS arrived_at', 'orders.created_at AS ordered_at', 'landing_pages.title AS landing_page_title', 'utm_sources.utm_source', 'utm_mediums.utm_medium', 'utm_campaigns.utm_campaign', 'utm_term', 'utm_content', 'referrers.referrer', 'referrers.domain AS referrer_domain', 'referrer_types.referrer_type', 'countries.country', 'countries.country_code', 'cities.city', 'device_types.device_type', 'device_oss.device_os', 'device_browsers.device_browser')->from(Tables::orders(), 'orders')->join(Tables::views() . ' AS views', function (JoinClause $join) {
+        $query = Illuminate_Builder::new()->select('initial_resources.cached_title AS initial_page_title', 'initial_resources.cached_url AS initial_page_url', 'sessions.total_views', 'sessions.created_at AS arrived_at', 'sessions.session_id', 'sessions.visitor_id', 'orders.created_at AS ordered_at', 'landing_pages.title AS landing_page_title', 'utm_sources.utm_source', 'utm_mediums.utm_medium', 'utm_campaigns.utm_campaign', 'utm_term', 'utm_content', 'referrers.referrer', 'referrers.domain AS referrer_domain', 'referrer_types.referrer_type', 'countries.country', 'countries.country_code', 'cities.city', 'device_types.device_type', 'device_oss.device_os', 'device_browsers.device_browser')->from(Tables::orders(), 'orders')->join(Tables::views() . ' AS views', function (JoinClause $join) {
             $join->on('views.id', '=', 'orders.view_id');
         })->join(Tables::sessions() . ' AS sessions', function (JoinClause $join) {
             $join->on('sessions.session_id', '=', 'views.session_id');
@@ -83,9 +90,8 @@ class WooCommerceOrderMetaBox
     private function format_date(string $value) : string
     {
         try {
-            $date = CarbonImmutable::parse($value)->setTimezone(Timezone::site_timezone());
-            $format = \IAWPSCOPED\iawp()->get_option('time_format', 'g:i a');
-            return $date->format($format);
+            $date = CarbonImmutable::parse($value, 'utc')->setTimezone(Timezone::site_timezone());
+            return $date->format(Format::time());
         } catch (\Throwable $e) {
             return $value;
         }

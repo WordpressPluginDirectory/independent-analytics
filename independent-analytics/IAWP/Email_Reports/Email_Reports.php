@@ -20,6 +20,7 @@ use IAWP\Tables\Table_Devices;
 use IAWP\Tables\Table_Geo;
 use IAWP\Tables\Table_Pages;
 use IAWP\Tables\Table_Referrers;
+use IAWP\Utils\Format;
 use IAWP\Utils\Timezone;
 use IAWP\Utils\URL;
 /** @internal */
@@ -27,7 +28,7 @@ class Email_Reports
 {
     public function __construct()
     {
-        $monitored_options = ['iawp_email_report_interval', 'iawp_email_report_time', 'iawp_email_report_email_addresses'];
+        $monitored_options = ['iawp_email_report_interval', 'iawp_email_report_time', 'iawp_email_report_email_addresses', 'iawp_email_report_paused'];
         foreach ($monitored_options as $option) {
             \add_action('update_option_' . $option, [$this, 'schedule'], 10, 0);
             \add_action('add_option_' . $option, [$this, 'schedule'], 10, 0);
@@ -40,6 +41,9 @@ class Email_Reports
     public function schedule()
     {
         \wp_unschedule_hook('iawp_send_email_report');
+        if (\get_option('iawp_email_report_paused', '0') === '1') {
+            return;
+        }
         if (empty(\IAWPSCOPED\iawp()->get_option('iawp_email_report_email_addresses', []))) {
             return;
         }
@@ -55,7 +59,7 @@ class Email_Reports
         if (!\wp_next_scheduled('iawp_send_email_report')) {
             return null;
         }
-        $date = new DateTime();
+        $date = new DateTime('now', Timezone::utc_timezone());
         $date->setTimezone(Timezone::site_timezone());
         $date->setTimestamp(\wp_next_scheduled('iawp_send_email_report'));
         return $date;
@@ -66,8 +70,8 @@ class Email_Reports
             return \esc_html__('There is no email scheduled.', 'independent-analytics');
         }
         $date = $this->interval()->next_interval_start();
-        $day = $date->format(\get_option('date_format'));
-        $time = $date->format(\IAWPSCOPED\iawp()->get_option('time_format', 'g:i a'));
+        $day = $date->format(Format::date());
+        $time = $date->format(Format::time());
         return \sprintf(\__('Next email scheduled for %s at %s.', 'independent-analytics'), '<span>' . $day . '</span>', '<span>' . $time . '</span>');
     }
     public function maybe_reschedule()
@@ -89,6 +93,9 @@ class Email_Reports
         $this->schedule();
         $to = \IAWPSCOPED\iawp()->get_option('iawp_email_report_email_addresses', []);
         if (empty($to)) {
+            return;
+        }
+        if (\get_option('iawp_email_report_paused', '0') === '1') {
             return;
         }
         $from = \IAWPSCOPED\iawp()->get_option('iawp_email_report_from_address', \get_option('admin_email'));
@@ -120,7 +127,7 @@ class Email_Reports
         $chart = new \IAWP\Email_Reports\Email_Chart($statistics);
         $colors = $colors == '' ? \IAWPSCOPED\iawp()->get_option('iawp_email_report_colors', ['#5123a0', '#fafafa', '#3a1e6b', '#fafafa', '#5123a0', '#a985e6', '#ece9f2', '#f7f5fa', '#ece9f2', '#dedae6']) : \explode(',', $colors);
         $footer_text = \IAWPSCOPED\iawp()->get_option('iawp_email_report_footer', \sprintf(\esc_html__('This email was generated and delivered by %s', 'independent-analytics'), \esc_url(\get_site_url())));
-        return \IAWPSCOPED\iawp_blade()->run('email.email', [
+        return \IAWPSCOPED\iawp_render('email.email', [
             'site_title' => \get_bloginfo('name'),
             'site_url' => URL::new(\get_site_url())->get_domain(),
             'date' => $this->interval()->report_time_period_for_humans(),
@@ -160,23 +167,23 @@ class Email_Reports
         foreach ($queries as $type => $title) {
             if ($type === 'pages') {
                 $pages_table = new Table_Pages();
-                $query = new Pages($date_range, $pages_table->sanitize_sort_parameters(), 10);
+                $query = new Pages($date_range, $pages_table->sanitize_sort_parameters('views'), 10);
                 $title = \esc_html__('Pages', 'independent-analytics');
             } elseif ($type === 'referrers') {
                 $referrers_table = new Table_Referrers();
-                $query = new Referrers($date_range, $referrers_table->sanitize_sort_parameters(), 10);
+                $query = new Referrers($date_range, $referrers_table->sanitize_sort_parameters('views'), 10);
                 $title = \esc_html__('Referrers', 'independent-analytics');
             } elseif ($type === 'countries') {
                 $geo_table = new Table_Geo();
-                $query = new Countries($date_range, $geo_table->sanitize_sort_parameters(), 10);
+                $query = new Countries($date_range, $geo_table->sanitize_sort_parameters('views'), 10);
                 $title = \esc_html__('Countries', 'independent-analytics');
             } elseif ($type === 'devices') {
                 $devices_table = new Table_Devices();
-                $query = new Device_Types($date_range, $devices_table->sanitize_sort_parameters(), 10);
+                $query = new Device_Types($date_range, $devices_table->sanitize_sort_parameters('views'), 10);
                 $title = \esc_html__('Devices', 'independent-analytics');
             } elseif ($type === 'campaigns') {
                 $campaigns_table = new Table_Campaigns();
-                $query = new Campaigns($date_range, $campaigns_table->sanitize_sort_parameters(), 10);
+                $query = new Campaigns($date_range, $campaigns_table->sanitize_sort_parameters('views'), 10);
                 $title = \esc_html__('Campaigns', 'independent-analytics');
             } elseif ($type === 'forms') {
                 // This is a special case for form submissions which doesn't have an associated table
@@ -186,7 +193,7 @@ class Email_Reports
                 $title = \esc_html__('Forms', 'independent-analytics');
             } elseif ($type === 'clicks') {
                 $clicks_table = new Table_Clicks();
-                $query = new Link_Patterns($date_range, $clicks_table->sanitize_sort_parameters(), 10);
+                $query = new Link_Patterns($date_range, $clicks_table->sanitize_sort_parameters('views'), 10);
                 $title = \esc_html__('Link Patterns', 'independent-analytics');
             } elseif ($type === 'landing_pages') {
                 $pages_table = new Table_Pages();

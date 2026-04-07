@@ -2,6 +2,8 @@
 
 namespace IAWP;
 
+use IAWPSCOPED\Carbon\CarbonImmutable;
+use IAWPSCOPED\Carbon\CarbonInterval;
 use IAWP\Admin_Page\Analytics_Page;
 use IAWP\Admin_Page\Campaign_Builder_Page;
 use IAWP\Admin_Page\Click_Tracking_Page;
@@ -10,6 +12,7 @@ use IAWP\Admin_Page\Integrations_Pages;
 use IAWP\Admin_Page\Settings_Page;
 use IAWP\Admin_Page\Support_Page;
 use IAWP\Admin_Page\Updates_Page;
+use IAWP\Admin_Page\Visitor_Page;
 use IAWP\AJAX\AJAX_Manager;
 use IAWP\Click_Tracking\Click_Processing_Job;
 use IAWP\Data_Pruning\Pruner;
@@ -23,9 +26,11 @@ use IAWP\Ecommerce\WooCommerce_Order;
 use IAWP\Email_Reports\Email_Reports;
 use IAWP\Form_Submissions\Form;
 use IAWP\Form_Submissions\Submission_Listener;
-use IAWP\Menu_Bar_Stats\Menu_Bar_Stats;
+use IAWP\Journey\JourneyStatisticsJob;
 use IAWP\Migrations\Migrations;
 use IAWP\Overview\Module_Refresh_Job;
+use IAWP\Overview\Modules\Module;
+use IAWP\Utils\Format;
 use IAWP\Utils\Plugin;
 use IAWP\Utils\Request;
 use IAWP\Utils\Singleton;
@@ -59,7 +64,7 @@ class Independent_Analytics
         AJAX_Manager::getInstance();
         if (!Migrations::is_migrating()) {
             new \IAWP\Track_Resource_Changes();
-            Menu_Bar_Stats::register();
+            \IAWP\Admin_Bar_Stats::register();
             WooCommerce_Order::register_hooks();
             EDD_Order::register_hooks();
             PMPro_Order::register_hooks();
@@ -67,8 +72,11 @@ class Independent_Analytics
             Fluent_Cart_Order::register_hooks();
         }
         \IAWP\Cron_Job::register_custom_intervals();
+        \IAWP\Database_Manager::register_actions();
         $this->cron_manager = new \IAWP\Cron_Manager();
         (new SureCart_Event_Sync_Job())->register_handler();
+        (new JourneyStatisticsJob())->register_handler();
+        (new \IAWP\FetchFaviconsJob())->register_handler();
         (new Click_Processing_Job())->register_handler();
         (new Module_Refresh_Job())->register_handler();
         (new \IAWP\Migration_Fixer_Job())->register_handler();
@@ -77,6 +85,9 @@ class Independent_Analytics
             $this->email_reports = new Email_Reports();
             new \IAWP\Campaign_Builder();
             WooCommerceOrderMetaBox::register();
+            \add_action('iawp_module_refresh_now', function () {
+                Module::refresh_all_modules();
+            });
         }
         \add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts_and_styles'], 110);
         // Called at 110 to dequeue other scripts
@@ -95,7 +106,7 @@ class Independent_Analytics
         \IAWP_FS()->add_filter('connect-header', [$this, 'freemius_optin_heading']);
         \IAWP_FS()->add_filter('connect_message', [$this, 'freemius_optin_text']);
         if (\function_exists('IAWPSCOPED\\fs_override_i18n')) {
-            fs_override_i18n(array('opt-in-connect' => \__('Subscribe & Go To Analytics', 'independent-analytics'), 'skip' => \__('No, thanks', 'independent-analytics')), 'independent-analytics');
+            fs_override_i18n(['opt-in-connect' => \__('Subscribe & Go To Analytics', 'independent-analytics'), 'skip' => \__('No, thanks', 'independent-analytics')], 'independent-analytics');
         }
         // Other hooks
         \add_action('admin_init', [$this, 'maybe_delete_mu_plugin']);
@@ -302,6 +313,12 @@ class Independent_Analytics
                 $debug_page->render(\false);
             });
         }
+        if (\IAWPSCOPED\iawp_is_pro() && \IAWP\Capability_Manager::can_view()) {
+            \add_submenu_page('options.php', \__('Journey'), \__('Journey'), \IAWP\Capability_Manager::menu_page_capability_string(), 'independent-analytics-visitor', function () {
+                $page = new Visitor_Page();
+                $page->render();
+            });
+        }
     }
     // The menu link is removed in the SDK setup, but this makes it completely inaccessible
     public function remove_freemius_pricing_menu()
@@ -325,17 +342,11 @@ class Independent_Analytics
         \wp_set_script_translations('iawp-settings-javascript', 'independent-analytics');
         \wp_register_script('iawp-click-tracking-menu-javascript', \IAWPSCOPED\iawp_url_to('dist/js/click-tracking-menu.js'), ['wp-i18n'], \IAWP_VERSION);
         \wp_set_script_translations('iawp-click-tracking-menu-javascript', 'independent-analytics');
-        if (Menu_Bar_Stats::is_option_enabled()) {
-            \wp_register_style('iawp-front-end-styles', \IAWPSCOPED\iawp_url_to('dist/styles/menu_bar_stats.css'), [], \IAWP_VERSION);
+        if (\IAWP\Admin_Bar_Stats::is_option_enabled()) {
+            \wp_register_style('iawp-admin-bar-stats', \IAWPSCOPED\iawp_url_to('dist/styles/admin_bar_stats.css'), [], \IAWP_VERSION);
         }
         if (\is_rtl()) {
             \wp_register_style('iawp-styles-rtl', \IAWPSCOPED\iawp_url_to('dist/styles/rtl.css'), [], \IAWP_VERSION);
-        }
-    }
-    public function register_scripts_and_styles_front_end() : void
-    {
-        if (Menu_Bar_Stats::is_option_enabled()) {
-            \wp_register_style('iawp-front-end-styles', \IAWPSCOPED\iawp_url_to('dist/styles/menu_bar_stats.css'), [], \IAWP_VERSION);
         }
     }
     public function enqueue_scripts_and_styles($hook)
@@ -368,15 +379,15 @@ class Independent_Analytics
         } elseif (\IAWPSCOPED\iawp_is_pro() && $this->is_woocommerce_support_enabled() && $hook == 'woocommerce_page_wc-orders') {
             \wp_enqueue_style('iawp-wc-order-box-styles');
         }
-        if (Menu_Bar_Stats::is_option_enabled()) {
-            \wp_enqueue_style('iawp-front-end-styles');
+        if (\IAWP\Admin_Bar_Stats::is_option_enabled()) {
+            \wp_enqueue_style('iawp-admin-bar-stats');
         }
     }
     public function enqueue_scripts_and_styles_front_end()
     {
-        if (Menu_Bar_Stats::is_option_enabled()) {
-            $this->register_scripts_and_styles_front_end();
-            \wp_enqueue_style('iawp-front-end-styles');
+        if (\IAWP\Admin_Bar_Stats::is_option_enabled()) {
+            \wp_register_style('iawp-admin-bar-stats', \IAWPSCOPED\iawp_url_to('dist/styles/admin_bar_stats.css'), [], \IAWP_VERSION);
+            \wp_enqueue_style('iawp-admin-bar-stats');
         }
     }
     public function enqueue_translations()
@@ -542,7 +553,7 @@ class Independent_Analytics
     }
     public function prefers_24_hour_clock() : bool
     {
-        $time_format = \IAWPSCOPED\iawp()->get_option('time_format', 'g:i a');
+        $time_format = Format::time();
         if (Str::contains($time_format, 'a') || Str::contains($time_format, 'A')) {
             return \false;
         }
@@ -562,7 +573,7 @@ class Independent_Analytics
         }
         $table_name = $wpdb->prefix . 'wc_order_stats';
         $order_stats_table = $wpdb->get_row($wpdb->prepare('
-                SELECT * FROM INFORMATION_SCHEMA.TABLES 
+                SELECT * FROM INFORMATION_SCHEMA.TABLES
                 WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
             ', $wpdb->dbname, $table_name));
         if (\is_null($order_stats_table)) {
@@ -626,5 +637,7 @@ class Independent_Analytics
             $locale = 'de_DE';
         }
         Carbon::setLocale($locale);
+        CarbonImmutable::setLocale($locale);
+        CarbonInterval::setLocale($locale);
     }
 }

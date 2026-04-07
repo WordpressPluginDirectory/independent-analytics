@@ -17,8 +17,8 @@ use IAWP\Statistics\Intervals\Intervals;
 use IAWP\Tables;
 use IAWP\Utils\Calculations;
 use IAWP\Utils\CSV;
+use IAWP\Utils\Format;
 use IAWP\Utils\Timezone;
-use IAWP\Utils\WordPress_Site_Date_Format_Pattern;
 use IAWPSCOPED\Illuminate\Database\Query\Builder;
 use IAWPSCOPED\Illuminate\Database\Query\JoinClause;
 use IAWPSCOPED\Illuminate\Support\Collection;
@@ -164,7 +164,7 @@ abstract class Statistics
         for ($i = 0; $i < $total_rows; $i++) {
             $csv_row = [];
             // The first row is the date interval label
-            $csv_row[] = $statistics[0]->statistic_over_time()[$i][0]->format(WordPress_Site_Date_Format_Pattern::for_php());
+            $csv_row[] = $statistics[0]->statistic_over_time()[$i][0]->format(Format::date());
             foreach ($statistics as $statistic) {
                 $csv_row[] = $statistic->format_value($statistic->statistic_over_time()[$i][1]);
             }
@@ -243,43 +243,46 @@ abstract class Statistics
         $utc_offset = Timezone::utc_offset();
         $site_offset = Timezone::site_offset();
         $sessions_table = Query::get_table_name(Query::SESSIONS);
-        $views_table = Query::get_table_name(Query::VIEWS);
         $orders_table = Query::get_table_name(Query::ORDERS);
         $referrers_table = Query::get_table_name(Query::REFERRERS);
         $campaigns_table = Query::get_table_name(Query::CAMPAIGNS);
-        $form_submissions_table = Query::get_table_name(Query::FORM_SUBMISSIONS);
-        $form_submissions_query = Illuminate_Builder::new()->select(['form_id', 'session_id'])->selectRaw('COUNT(*) AS form_submissions')->from($form_submissions_table, 'form_submissions')->whereBetween('created_at', [$range->iso_start(), $range->iso_end()])->groupBy(['form_id', 'session_id']);
+        $iso_range = [$range->iso_start(), $range->iso_end()];
+        $clicks_subquery = Illuminate_Builder::new()->select('view_id')->selectRaw('COUNT(*) AS clicks')->from(Tables::clicks())->groupBy('view_id');
+        $orders_subquery = Illuminate_Builder::new()->selectRaw('initial_view_id AS view_id')->selectRaw('COUNT(*) AS orders')->selectRaw('IFNULL(CAST(SUM(total) AS SIGNED), 0) AS gross_sales')->selectRaw('IFNULL(CAST(SUM(total_refunded) AS SIGNED), 0) AS total_refunded')->selectRaw('IFNULL(CAST(SUM(total_refunds) AS SIGNED), 0) AS total_refunds')->selectRaw('IFNULL(CAST(SUM(total - total_refunded) AS SIGNED), 0) AS net_sales')->from($orders_table)->where('is_included_in_analytics', '=', \true)->groupBy('initial_view_id');
+        $form_submissions_subquery = Illuminate_Builder::new()->select('view_id')->selectRaw('COUNT(*) AS form_submissions')->tap(function (Builder $query) {
+            foreach (Form::get_forms() as $form) {
+                $query->selectRaw('SUM(IF(form_id = ?, 1, 0)) AS ' . $form->submissions_column(), [$form->id()]);
+            }
+        })->from(Tables::form_submissions(), 'form_submissions')->whereBetween('created_at', $iso_range)->groupBy('view_id');
         $session_statistics = Illuminate_Builder::new();
-        $session_statistics->select('sessions.session_id')->selectRaw('COUNT(DISTINCT views.id) AS views')->selectRaw('COUNT(DISTINCT clicks.click_id) AS clicks')->selectRaw('COUNT(DISTINCT orders.order_id) AS orders')->selectRaw('IFNULL(CAST(SUM(orders.total) AS SIGNED), 0) AS gross_sales')->selectRaw('IFNULL(CAST(SUM(orders.total_refunded) AS SIGNED), 0) AS total_refunded')->selectRaw('IFNULL(CAST(SUM(orders.total_refunds) AS SIGNED), 0) AS total_refunds')->selectRaw('IFNULL(CAST(SUM(orders.total - orders.total_refunded) AS SIGNED), 0) AS net_sales')->from("{$sessions_table} AS sessions")->join("{$views_table} AS views", function (JoinClause $join) {
-            $join->on('sessions.session_id', '=', 'views.session_id');
-        })->leftJoin("{$orders_table} AS orders", function (JoinClause $join) {
-            $join->on('views.id', '=', 'orders.initial_view_id')->where('orders.is_included_in_analytics', '=', \true);
-        })->leftJoin("{$this->tables::clicks()} AS clicks", function (JoinClause $join) {
-            $join->on('views.id', '=', 'clicks.view_id');
-        })->leftJoin("{$referrers_table} AS referrers", function (JoinClause $join) {
+        $session_statistics->select('sessions.session_id')->selectRaw('COUNT(DISTINCT views.id) AS views')->selectRaw('IFNULL(CAST(SUM(clicks.clicks) AS SIGNED), 0) AS clicks')->selectRaw('IFNULL(CAST(SUM(orders.orders) AS SIGNED), 0) AS orders')->selectRaw('IFNULL(CAST(SUM(orders.gross_sales) AS SIGNED), 0) AS gross_sales')->selectRaw('IFNULL(CAST(SUM(orders.total_refunded) AS SIGNED), 0) AS total_refunded')->selectRaw('IFNULL(CAST(SUM(orders.total_refunds) AS SIGNED), 0) AS total_refunds')->selectRaw('IFNULL(CAST(SUM(orders.gross_sales - orders.total_refunded) AS SIGNED), 0) AS net_sales')->selectRaw('IFNULL(SUM(form_submissions.form_submissions), 0) AS form_submissions')->tap(function (Builder $query) {
+            foreach (Form::get_forms() as $form) {
+                $query->selectRaw('IFNULL(CAST(SUM(form_submissions.' . $form->submissions_column() . ') AS SIGNED), 0) AS ' . $form->submissions_column());
+            }
+        })->from(Tables::sessions() . " AS sessions")->join(Tables::views() . " AS views", 'sessions.session_id', '=', 'views.session_id')->leftJoinSub($clicks_subquery, 'clicks', 'clicks.view_id', '=', 'views.id')->leftJoinSub($orders_subquery, 'orders', 'orders.view_id', '=', 'views.id')->leftJoinSub($form_submissions_subquery, 'form_submissions', 'form_submissions.view_id', '=', 'views.id')->leftJoin("{$referrers_table} AS referrers", function (JoinClause $join) {
             $join->on('sessions.referrer_id', '=', 'referrers.id');
         })->leftJoin("{$campaigns_table} AS campaigns", function (JoinClause $join) {
             $join->on('sessions.campaign_id', '=', 'campaigns.campaign_id');
         })->tap(Query_Taps::tap_authored_content_check(\true))->when(!\is_null($rows), function (Builder $query) use($rows) {
             $rows->attach_filters($query);
-        })->whereBetween('sessions.created_at', [$range->iso_start(), $range->iso_end()])->whereBetween('views.viewed_at', [$range->iso_start(), $range->iso_end()])->groupBy('sessions.session_id')->when(!\is_null($this->required_column()), function (Builder $query) {
+        })->whereBetween('sessions.created_at', $iso_range)->whereBetween('views.viewed_at', $iso_range)->groupBy('sessions.session_id')->when(!\is_null($this->required_column()), function (Builder $query) {
             $query->whereNotNull($this->required_column());
         });
         $statistics = Illuminate_Builder::new();
-        $statistics->selectRaw('IFNULL(CAST(SUM(sessions.total_views) AS SIGNED), 0) AS total_views')->selectRaw('IFNULL(CAST(SUM(session_statistics.views) AS SIGNED), 0) AS views')->selectRaw('COUNT(DISTINCT sessions.visitor_id) AS visitors')->selectRaw('COUNT(DISTINCT sessions.session_id) AS sessions')->selectRaw('IFNULL(CAST(SUM(session_statistics.clicks) AS SIGNED), 0) AS clicks')->selectRaw('IFNULL(CAST(AVG(TIMESTAMPDIFF(SECOND, sessions.created_at, sessions.ended_at)) AS SIGNED), 0) AS average_session_duration')->selectRaw('COUNT(DISTINCT IF(sessions.final_view_id IS NULL, sessions.session_id, NULL)) AS bounces')->selectRaw('IFNULL(CAST(SUM(session_statistics.orders) AS SIGNED), 0) AS wc_orders')->selectRaw('IFNULL(CAST(SUM(session_statistics.gross_sales) AS SIGNED), 0) AS wc_gross_sales')->selectRaw('IFNULL(CAST(SUM(session_statistics.total_refunds) AS SIGNED), 0) AS wc_refunds')->selectRaw('IFNULL(CAST(SUM(session_statistics.total_refunded) AS SIGNED), 0) AS wc_refunded_amount')->selectRaw('IFNULL(CAST(SUM(session_statistics.net_sales) AS SIGNED), 0) AS wc_net_sales')->selectRaw('IFNULL(SUM(form_submissions.form_submissions), 0) AS form_submissions')->tap(function (Builder $query) {
+        $statistics->selectRaw('IFNULL(CAST(SUM(sessions.total_views) AS SIGNED), 0) AS total_views')->selectRaw('IFNULL(CAST(SUM(session_statistics.views) AS SIGNED), 0) AS views')->selectRaw('COUNT(DISTINCT sessions.visitor_id) AS visitors')->selectRaw('COUNT(DISTINCT sessions.session_id) AS sessions')->selectRaw('IFNULL(CAST(SUM(session_statistics.clicks) AS SIGNED), 0) AS clicks')->selectRaw('IFNULL(CAST(AVG(TIMESTAMPDIFF(SECOND, sessions.created_at, sessions.ended_at)) AS SIGNED), 0) AS average_session_duration')->selectRaw('COUNT(DISTINCT IF(sessions.final_view_id IS NULL, sessions.session_id, NULL)) AS bounces')->selectRaw('IFNULL(CAST(SUM(session_statistics.orders) AS SIGNED), 0) AS wc_orders')->selectRaw('IFNULL(CAST(SUM(session_statistics.gross_sales) AS SIGNED), 0) AS wc_gross_sales')->selectRaw('IFNULL(CAST(SUM(session_statistics.total_refunds) AS SIGNED), 0) AS wc_refunds')->selectRaw('IFNULL(CAST(SUM(session_statistics.total_refunded) AS SIGNED), 0) AS wc_refunded_amount')->selectRaw('IFNULL(CAST(SUM(session_statistics.net_sales) AS SIGNED), 0) AS wc_net_sales')->selectRaw('IFNULL(SUM(session_statistics.form_submissions), 0) AS form_submissions')->tap(function (Builder $query) {
             foreach (Form::get_forms() as $form) {
-                $query->selectRaw('IFNULL(SUM(IF(form_submissions.form_id = ?, form_submissions.form_submissions, 0)), 0) AS ' . $form->submissions_column(), [$form->id()]);
+                $query->selectRaw('IFNULL(SUM(session_statistics.' . $form->submissions_column() . '), 0) AS ' . $form->submissions_column());
             }
         })->from("{$sessions_table} AS sessions")->joinSub($session_statistics, 'session_statistics', function (JoinClause $join) {
             $join->on('sessions.session_id', '=', 'session_statistics.session_id');
-        })->leftJoinSub($form_submissions_query, 'form_submissions', 'sessions.session_id', '=', 'form_submissions.session_id')->whereBetween('sessions.created_at', [$range->iso_start(), $range->iso_end()])->when($is_grouped_by_date_interval, function (Builder $query) use($utc_offset, $site_offset) {
+        })->whereBetween('sessions.created_at', [$range->iso_start(), $range->iso_end()])->when($is_grouped_by_date_interval, function (Builder $query) use($utc_offset, $site_offset) {
             if ($this->chart_interval->id() === 'daily') {
                 $query->selectRaw("DATE(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}')) AS date");
             } elseif ($this->chart_interval->id() === 'monthly') {
                 $query->selectRaw("DATE_FORMAT(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}'), '%Y-%m-01 00:00:00') AS date");
             } elseif ($this->chart_interval->id() === 'weekly') {
                 $day_of_week = \IAWPSCOPED\iawp()->get_option('iawp_dow', 0) + 1;
-                $query->selectRaw("\n                               IF (\n                                  DAYOFWEEK(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}')) - {$day_of_week} < 0,\n                                  DATE_FORMAT(SUBDATE(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}'), DAYOFWEEK(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}')) - {$day_of_week} + 7), '%Y-%m-%d 00:00:00'),\n                                  DATE_FORMAT(SUBDATE(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}'), DAYOFWEEK(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}')) - {$day_of_week}), '%Y-%m-%d 00:00:00')\n                               ) AS date\n                           ");
+                $query->selectRaw("\n                           IF (\n                              DAYOFWEEK(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}')) - {$day_of_week} < 0,\n                              DATE_FORMAT(SUBDATE(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}'), DAYOFWEEK(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}')) - {$day_of_week} + 7), '%Y-%m-%d 00:00:00'),\n                              DATE_FORMAT(SUBDATE(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}'), DAYOFWEEK(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}')) - {$day_of_week}), '%Y-%m-%d 00:00:00')\n                           ) AS date\n                       ");
             } else {
                 $query->selectRaw("DATE_FORMAT(CONVERT_TZ(sessions.created_at, '{$utc_offset}', '{$site_offset}'), '%Y-%m-%d %H:00:00') AS date");
             }

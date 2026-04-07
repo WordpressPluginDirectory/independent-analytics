@@ -318,7 +318,7 @@ class Report_Controller extends Controller {
             }
 
             if(isExaminer) {
-                jQuery('#table-toolbar').replaceWith(response.table_toolbar)
+                jQuery('#table-toolbar').replaceWith(response.tableToolbar)
             }
 
             if(isExaminer && isInitialFetch) {
@@ -359,6 +359,10 @@ class Report_Controller extends Controller {
             document.getElementById('data-table').setAttribute('data-total-number-of-rows', response.totalNumberOfRows)
 
             jQuery('#iawp-parent').removeClass('loading');
+
+            if(!isInitialFetch && response.groupId === 'journey') {
+                document.body.scrollIntoView({ behavior: 'instant', block: 'start' })
+            }
         });
     }
 

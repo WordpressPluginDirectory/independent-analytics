@@ -8,6 +8,24 @@
         </div>
         <div class="entry">
             <div class="video-container">
+                <iframe src="https://www.youtube-nocookie.com/embed/Xc0uN24245w?si=V6qRYH6NVpq0IVmX" title="Version 2.14.0 update" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+            <div class="text">
+                <div class="title-container">
+                    <h2 class="title">Version 2.14 - The User Journeys Report is Here!</h2>
+                    <span class="date">January 19th, 2026</span>
+                </div>
+                <div class="description-container">
+                    <p>Version 2.14.0 adds the User Journey report to Independent Analytics Pro. Browse your recent sessions
+                        and explore a timeline of every visitors journey through your website.</p>
+                    <p>You can review the <a
+                            href="https://independentwp.com/changelog/version-2-14-0/"
+                            target="_blank">full changelog here</a>.</p>
+                </div>
+            </div>
+        </div>
+        <div class="entry">
+            <div class="video-container">
                 <iframe src="https://www.youtube-nocookie.com/embed/GtuvpNcC0dA?si=lTdhF4Ue--OTTXN7" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
             </div>
             <div class="text">
@@ -42,24 +60,6 @@
                             href="https://independentwp.com/changelog/version-2-12-0/"
                             target="_blank">full changelog here</a>.
                         </p>
-                </div>
-            </div>
-        </div>
-        <div class="entry">
-            <div class="video-container">
-                <iframe src="https://www.youtube-nocookie.com/embed/Saubzot9UoM?si=V_QgHULGXxtkNElj" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-            </div>
-            <div class="text">
-                <div class="title-container">
-                    <h2 class="title">Version 2.11 - Build the Ultimate Dashboard with the Overview Report!</h2>
-                    <span class="date">April 21st, 2025</span>
-                </div>
-                <div class="description-container">
-                    <p>Version 2.11.0 adds a new Overview report feature to Independent Analytics Pro. Choose from 10
-                        customizable modules to build the perfect analytics dashboard for your website.</p>
-                    <p>You can review the <a
-                            href="https://independentwp.com/changelog/version-2-11-0/"
-                            target="_blank">full changelog here</a>.</p>
                 </div>
             </div>
         </div>

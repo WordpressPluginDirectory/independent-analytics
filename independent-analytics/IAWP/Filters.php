@@ -3,8 +3,8 @@
 namespace IAWP;
 
 use IAWP\Tables\Columns\Column;
+use IAWP\Utils\Format;
 use IAWP\Utils\Security;
-use IAWP\Utils\WordPress_Site_Date_Format_Pattern;
 /** @internal */
 class Filters
 {
@@ -42,7 +42,7 @@ class Filters
         >
             <div class="modal-inner">
                 <?php 
-        $select = '<select name="filter_logic" id="filter_logic" data-action="filters#changeFilterLogic">
+        $select = '<select name="filter_logic" data-filters-target="filterLogic" id="filter_logic" data-action="filters#changeFilterLogic">
                                     <option value="and" ' . ($options->filter_logic() === 'and' ? 'selected' : '') . '>' . \esc_html__('all', 'independent-analytics') . '</option>
                                     <option value="or" ' . ($options->filter_logic() === 'or' ? 'selected' : '') . '>' . \esc_html__('any', 'independent-analytics') . '</option>
                                 </select>';
@@ -192,7 +192,7 @@ class Filters
             }
             \array_push($column_sections[$section_name]['columns'], $column);
         }
-        echo \IAWPSCOPED\iawp_blade()->run('partials.filter-column-select', ['column_sections' => $column_sections]);
+        echo \IAWPSCOPED\iawp_render('partials.filter-column-select', ['column_sections' => $column_sections]);
     }
     private function get_all_operator_selects()
     {
@@ -218,13 +218,13 @@ class Filters
                     $html .= '<input data-filters-target="operand" data-action="keydown->filters#operandKeyDown filters#operandChange" data-column="' . \esc_attr($column->id()) . '" type="number" data-testid="' . \esc_attr($column->id()) . '-operand" placeholder="' . \esc_attr($column->filter_placeholder()) . '" />';
                     break;
                 case 'date':
-                    $html .= '<input type="text" 
+                    $html .= '<input type="text"
                         data-filters-target="operand"
                         data-action="keydown->filters#operandKeyDown filters#operandChange"
                         data-column="' . \esc_attr($column->id()) . '"
                         data-controller="easepick"
-                        data-css="' . \esc_url(\IAWPSCOPED\iawp_url_to('dist/styles/easepick/datepicker.css')) . '" data-dow="' . \absint(\IAWPSCOPED\iawp()->get_option('iawp_dow', 1)) . '" 
-                        data-format="' . \esc_attr(WordPress_Site_Date_Format_Pattern::for_javascript()) . '" 
+                        data-css="' . \esc_url(\IAWPSCOPED\iawp_url_to('dist/styles/easepick/datepicker.css')) . '" data-dow="' . \absint(\IAWPSCOPED\iawp()->get_option('iawp_dow', 1)) . '"
+                        data-format="' . \esc_attr(Format::date_for_javascript()) . '"
                         data-testid="' . \esc_attr($column->id()) . '-operand" />';
                     break;
                 case 'select':

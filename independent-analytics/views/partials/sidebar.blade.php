@@ -24,14 +24,7 @@
                 </a>
             </div><?php
         endif; ?>
-        <div class="collapse-container">
-            <button id="collapse-sidebar" class="collapse-sidebar iawp-text-button"
-                    data-testid="collapse-button"><span
-                        class="dashicons dashicons-admin-collapse"></span><span
-                        class="text"><?php esc_html_e('Collapse sidebar', 'independent-analytics'); ?></span>
-            </button>
-            <span class="collapsed-label"><?php esc_html_e('Expand sidebar', 'independent-analytics'); ?></span>
-        </div>
+
         <div class="mobile-menu">
             <button id="mobile-menu-toggle" class="mobile-menu-toggle iawp-button ghost-purple">
                 <span class="dashicons dashicons-menu"></span> <span class="text"><?php
@@ -43,8 +36,8 @@
             <div class="reports-list">
                 <?php
                 // OVERVIEW
-                if ($env->is_pro()) {
-                    echo iawp_blade()->run('partials.sidebar-menu-section', [
+                if ($env->is_pro() && $can_view_all_analytics) {
+                    echo iawp_render('partials.sidebar-menu-section', [
                         'can_edit_settings' => $can_edit_settings,
                         'report_name'       => esc_html__('Overview', 'independent-analytics'),
                         'report_type'       => 'overview',
@@ -58,7 +51,7 @@
                 }
                 // REAL-TIME
                 if ($env->is_pro()) {
-                    echo iawp_blade()->run('partials.sidebar-menu-section', [
+                    echo iawp_render('partials.sidebar-menu-section', [
                         'can_edit_settings' => $can_edit_settings,
                         'report_name'       => esc_html__('Real-time', 'independent-analytics'),
                         'report_type'       => 'real-time',
@@ -70,8 +63,22 @@
                         'upgrade'           => false
                     ]);
                 }
+                // JOURNEYS
+                if ($env->is_pro() && $can_view_all_analytics) {
+                    echo iawp_render('partials.sidebar-menu-section', [
+                        'can_edit_settings' => $can_edit_settings,
+                        'report_name'       => esc_html__('User Journeys', 'independent-analytics'),
+                        'report_type'       => 'journeys',
+                        'reports'           => $report_finder->get_saved_reports_for_type('journeys'),
+                        'collapsed_label'   => '',
+                        'supports_saved_reports' => true,
+                        'url'               => iawp_dashboard_url(['tab' => 'journeys']),
+                        'external'          => false,
+                        'upgrade'           => false
+                    ]);
+                }
                 // PAGES
-                echo iawp_blade()->run('partials.sidebar-menu-section', [
+                echo iawp_render('partials.sidebar-menu-section', [
                     'can_edit_settings' => $can_edit_settings,
                     'report_name'       => esc_html__('Pages', 'independent-analytics'),
                     'report_type'       => 'views',
@@ -83,7 +90,7 @@
                     'upgrade'           => false
                 ]);
                 // REFERRERS
-                echo iawp_blade()->run('partials.sidebar-menu-section', [
+                echo iawp_render('partials.sidebar-menu-section', [
                     'can_edit_settings' => $can_edit_settings,
                     'report_name'       => esc_html__('Referrers', 'independent-analytics'),
                     'report_type'       => 'referrers',
@@ -95,7 +102,7 @@
                     'upgrade'           => false
                 ]);
                 // GEOGRAPHIC
-                echo iawp_blade()->run('partials.sidebar-menu-section', [
+                echo iawp_render('partials.sidebar-menu-section', [
                     'can_edit_settings' => $can_edit_settings,
                     'report_name'       => esc_html__('Geographic', 'independent-analytics'),
                     'report_type'       => 'geo',
@@ -107,7 +114,7 @@
                     'upgrade'           => false
                 ]);
                 // DEVICES
-                echo iawp_blade()->run('partials.sidebar-menu-section', [
+                echo iawp_render('partials.sidebar-menu-section', [
                     'can_edit_settings' => $can_edit_settings,
                     'report_name'       => esc_html__('Devices', 'independent-analytics'),
                     'report_type'       => 'devices',
@@ -120,7 +127,7 @@
                 ]);
                 // CAMPAIGNS
                 if ($env->is_pro()) {
-                    echo iawp_blade()->run('partials.sidebar-menu-section', [
+                    echo iawp_render('partials.sidebar-menu-section', [
                         'can_edit_settings' => $can_edit_settings,
                         'report_name'       => esc_html__('Campaigns', 'independent-analytics'),
                         'report_type'       => 'campaigns',
@@ -132,8 +139,9 @@
                         'upgrade'           => false
                     ]);
                 }
+                // CLICKS
                 if ($env->is_pro()) {
-                    echo iawp_blade()->run('partials.sidebar-menu-section', [
+                    echo iawp_render('partials.sidebar-menu-section', [
                         'can_edit_settings' => $can_edit_settings,
                         'report_name'       => esc_html__('Clicks', 'independent-analytics'),
                         'report_type'       => 'clicks',
@@ -147,7 +155,7 @@
                 }
                 if ($env->is_free() && ! $env->is_white_labeled()) {
                     // OVERVIEW UPGRADE
-                    echo iawp_blade()->run('partials.sidebar-menu-section', [
+                    echo iawp_render('partials.sidebar-menu-section', [
                         'can_edit_settings' => $can_edit_settings,
                         'report_name'       => esc_html__('Overview', 'independent-analytics'),
                         'report_type'       => 'overview',
@@ -161,8 +169,23 @@
                         'external'          => true,
                         'upgrade'           => true
                     ]);
+                    // USER JOURNEYS UPGRADE
+                    echo iawp_render('partials.sidebar-menu-section', [
+                        'can_edit_settings' => $can_edit_settings,
+                        'report_name'       => esc_html__('User Journeys', 'independent-analytics'),
+                        'report_type'       => 'journeys',
+                        'reports'           => null,
+                        'collapsed_label'   => esc_html__(
+                            'Get user journeys',
+                            'independent-analytics'
+                        ),
+                        'supports_saved_reports' => false,
+                        'url'               => 'https://independentwp.com/features/user-journeys/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=User+Journeys+menu+item&utm_content=Sidebar',
+                        'external'          => true,
+                        'upgrade'           => true
+                    ]);
                     // CAMPAIGNS UPGRADE
-                    echo iawp_blade()->run('partials.sidebar-menu-section', [
+                    echo iawp_render('partials.sidebar-menu-section', [
                         'can_edit_settings' => $can_edit_settings,
                         'report_name'       => esc_html__('Campaigns', 'independent-analytics'),
                         'report_type'       => 'campaigns',
@@ -177,7 +200,7 @@
                         'upgrade'           => true
                     ]);
                     // CLICKS UPGRADE
-                    echo iawp_blade()->run('partials.sidebar-menu-section', [
+                    echo iawp_render('partials.sidebar-menu-section', [
                         'can_edit_settings' => $can_edit_settings,
                         'report_name'       => esc_html__('Clicks', 'independent-analytics'),
                         'report_type'       => 'clicks',
@@ -192,7 +215,7 @@
                         'upgrade'           => true
                     ]);
                     // REAL-TIME UPGRADE
-                    echo iawp_blade()->run('partials.sidebar-menu-section', [
+                    echo iawp_render('partials.sidebar-menu-section', [
                         'can_edit_settings' => $can_edit_settings,
                         'report_name'       => esc_html__('Real-Time', 'independent-analytics'),
                         'report_type'       => 'real-time-free',
@@ -208,6 +231,14 @@
                     ]);
                 } ?>
             </div>
+        </div>
+        <div class="collapse-container">
+            <button id="collapse-sidebar" class="collapse-sidebar iawp-text-button"
+                    data-testid="collapse-button"><span
+                        class="dashicons dashicons-admin-collapse"></span><span
+                        class="text"><?php esc_html_e('Collapse sidebar', 'independent-analytics'); ?></span>
+            </button>
+            <span class="collapsed-label"><?php esc_html_e('Expand sidebar', 'independent-analytics'); ?></span>
         </div>
     </div>
 </div>

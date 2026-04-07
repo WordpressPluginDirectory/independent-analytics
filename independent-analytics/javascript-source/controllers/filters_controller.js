@@ -19,6 +19,7 @@ export default class extends Controller {
         'operand',
         'conditionButtons',
         'spinner',
+        'filterLogic'
     ]
 
     appliedConditions = 0
@@ -100,7 +101,7 @@ export default class extends Controller {
                 return condition.contains(operand)
             }).forEach((operand) => {
                 const isMatch = operand.dataset.column === columnTarget.value
-                
+
                 operand.classList.toggle('show', isMatch)
 
                 if(isMatch) {
@@ -245,6 +246,7 @@ export default class extends Controller {
     }
 
     reset() {
+        this.filterLogicTarget.value = 'and'
         this.conditionTargets.forEach((condition) => {
             condition.remove()
         })

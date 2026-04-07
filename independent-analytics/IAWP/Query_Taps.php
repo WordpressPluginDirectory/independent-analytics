@@ -4,6 +4,7 @@ namespace IAWP;
 
 use IAWPSCOPED\Illuminate\Database\Query\Builder;
 use IAWPSCOPED\Illuminate\Database\Query\JoinClause;
+use IAWPSCOPED\Illuminate\Support\Str;
 /** @internal */
 class Query_Taps
 {
@@ -35,9 +36,9 @@ class Query_Taps
             $query->where('resources.cached_author_id', '=', \get_current_user_id());
         };
     }
-    public static function tap_related_to_examined_record(?\IAWP\Examiner_Config $config)
+    public static function tap_related_to_examined_record(?\IAWP\Examiner_Config $config, array $tables = [])
     {
-        return function (Builder $query) use($config) {
+        return function (Builder $query) use($config, $tables) {
             if (!$config) {
                 return;
             }
@@ -53,8 +54,44 @@ class Query_Taps
                 $query->leftJoin(\IAWP\Tables::campaigns() . ' AS campaigns', 'sessions.campaign_id', '=', 'campaigns.campaign_id');
             }
             if ($config->group() === 'link' || $config->group() === 'link_pattern') {
+                if (!\in_array('clicks', $tables)) {
+                    $query->leftJoin(\IAWP\Tables::clicks() . ' AS clicks', 'clicks.view_id', '=', 'views.id');
+                }
                 $query->leftJoin(\IAWP\Tables::clicked_links() . ' AS clicked_links', 'clicked_links.click_id', '=', 'clicks.click_id');
                 $query->leftJoin(\IAWP\Tables::links() . ' AS links', 'links.id', '=', 'clicked_links.link_id');
+            }
+            $query->where($column, '=', $config->id());
+        };
+    }
+    public static function tap_related_to_examined_record_for_previous_period(?\IAWP\Examiner_Config $config, array $tables)
+    {
+        return function (Builder $query) use($config, $tables) {
+            if (!$config) {
+                return;
+            }
+            $column = self::examiner_type_to_column($config->group());
+            if (!$column) {
+                return;
+            }
+            $table = Str::before($column, '.');
+            if (!\in_array($table, $tables)) {
+                if ($table === 'views') {
+                    $query->leftJoin(\IAWP\Tables::views() . ' AS views', 'sessions.session_id', '=', 'views.session_id');
+                }
+                if ($table === 'referrers') {
+                    $query->leftJoin(\IAWP\Tables::referrers() . ' AS referrers', 'sessions.referrer_id', '=', 'referrers.id');
+                }
+                if ($table === 'campaigns') {
+                    $query->leftJoin(\IAWP\Tables::campaigns() . ' AS campaigns', 'sessions.campaign_id', '=', 'campaigns.campaign_id');
+                }
+                if ($table === 'links') {
+                    if (!\in_array('views', $tables)) {
+                        $query->leftJoin(\IAWP\Tables::views() . ' AS views', 'sessions.session_id', '=', 'views.session_id');
+                    }
+                    $query->leftJoin(\IAWP\Tables::clicks() . ' AS clicks', 'views.id', '=', 'clicks.view_id');
+                    $query->leftJoin(\IAWP\Tables::clicked_links() . ' AS clicked_links', 'clicked_links.click_id', '=', 'clicks.click_id');
+                    $query->leftJoin(\IAWP\Tables::links() . ' AS links', 'links.id', '=', 'clicked_links.link_id');
+                }
             }
             $query->where($column, '=', $config->id());
         };

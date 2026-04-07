@@ -2,8 +2,8 @@
 
 namespace IAWP\Tables;
 
-use IAWP\ColumnOptions\Plugins\LinkPatterns;
 use IAWP\ColumnOptions\Options;
+use IAWP\ColumnOptions\Plugins\LinkPatterns;
 use IAWP\Rows\Link_Patterns;
 use IAWP\Rows\Links;
 use IAWP\Statistics\Click_Statistics;

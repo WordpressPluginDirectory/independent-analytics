@@ -2,18 +2,9 @@
 
 namespace IAWP\Rows;
 
-use IAWP\ColumnOptions\Author_Filter_List;
-use IAWP\ColumnOptions\Category_Filter_List;
-use IAWP\ColumnOptions\Device_Browser_Filter_List;
-use IAWP\ColumnOptions\Device_OS_Filter_List;
-use IAWP\ColumnOptions\Device_Type_Filter_List;
-use IAWP\ColumnOptions\Link_Name_Filter_List;
-use IAWP\ColumnOptions\Page_Type_Filter_List;
-use IAWP\ColumnOptions\Referrer_Type_Filter_List;
-use IAWP\Form_Submissions\Form;
 use IAWP\Tables\Columns\Column;
-use IAWP\Utils\String_Util;
-use IAWP\Utils\WordPress_Site_Date_Format_Pattern;
+use IAWP\Utils\Format;
+use IAWP\Utils\Timezone;
 use IAWPSCOPED\Illuminate\Database\Query\Builder;
 use IAWPSCOPED\Illuminate\Support\Str;
 /** @internal */
@@ -37,6 +28,14 @@ class Filter
     {
         if ($this->column->id() === 'category') {
             $this->apply_category_filter($query, $in_or_chain);
+            return;
+        }
+        if ($this->query_value_to_match() === 'is_not_null' && $this->query_operator() === '=') {
+            $query->whereNotNull($this->query_column($filter_type));
+            return;
+        }
+        if ($this->query_value_to_match() === 'is_not_null' && $this->query_operator() === '!=') {
+            $query->whereNull($this->query_column($filter_type));
             return;
         }
         $method = $this->query_method($in_or_chain, $filter_type);
@@ -82,8 +81,8 @@ class Filter
                 $condition_string = $this->column->options()->label_for($value);
             } elseif ($key == 'operand' && $condition['column'] == 'date') {
                 try {
-                    $date = \DateTime::createFromFormat('U', $value);
-                    $condition_string = $date->format(WordPress_Site_Date_Format_Pattern::for_php());
+                    $date = \DateTime::createFromFormat('U', $value, Timezone::utc_timezone());
+                    $condition_string = $date->format(Format::date());
                 } catch (\Throwable $e) {
                     $condition_string = $value;
                 }
@@ -179,7 +178,7 @@ class Filter
         // if ($this->column->id() === 'cached_date') {
         if ($this->column->id() === 'date') {
             try {
-                $date = \DateTime::createFromFormat('U', $this->operand);
+                $date = \DateTime::createFromFormat('U', $this->operand, Timezone::utc_timezone());
             } catch (\Throwable $e) {
                 $date = new \DateTime();
             }
