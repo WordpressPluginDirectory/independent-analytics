@@ -13,8 +13,7 @@ use IAWP\Map_Data;
 use IAWP\Overview\Overview;
 use IAWP\Plugin_Conflict_Detector;
 use IAWP\Quick_Stats;
-use IAWP\Real_Time;
-use IAWP\Report;
+use IAWP\RealTime\RealTime;
 use IAWP\Report_Finder;
 use IAWP\Tables\Table;
 use IAWP\Tables\Table_Journeys;
@@ -30,11 +29,10 @@ class Analytics_Page extends \IAWP\Admin_Page\Admin_Page
         $options = Dashboard_Options::getInstance();
         $date_rage = $options->get_date_range();
         $tab = (new Env())->get_tab();
-        $report = Report_Finder::new()->fetch_current_report();
-        $is_showing_skeleton_ui = $report instanceof Report && $report->has_filters();
+        $is_showing_skeleton_ui = \true;
         // Real-time is its own thing
         if ($tab === 'real-time') {
-            $real_time = new Real_Time();
+            $real_time = new RealTime();
             $real_time->render_real_time_analytics();
             return;
         }
@@ -96,31 +94,31 @@ class Analytics_Page extends \IAWP\Admin_Page\Admin_Page
         echo Security::string($table->group()->singular());
         ?>"
              data-report-relative-range-id-value="<?php 
-        echo Security::attr($options->relative_range_id());
+        echo \esc_attr($options->relative_range_id());
         ?>"
              data-report-exact-start-value="<?php 
-        echo Security::attr($options->start());
+        echo \esc_attr($options->start());
         ?>"
              data-report-exact-end-value="<?php 
-        echo Security::attr($options->end());
+        echo \esc_attr($options->end());
         ?>"
              data-report-group-value="<?php 
-        echo Security::attr($table->group()->id());
+        echo \esc_attr($table->group()->id());
         ?>"
              data-report-filters-value="<?php 
         echo \esc_attr(Security::json_encode($options->raw_filters()));
         ?>"
              data-report-filter-logic-value="<?php 
-        echo Security::attr($options->filter_logic());
+        echo \esc_attr($options->filter_logic());
         ?>"
              data-report-chart-interval-value="<?php 
-        echo Security::attr($options->chart_interval()->id());
+        echo \esc_attr($options->chart_interval()->id());
         ?>"
              data-report-sort-column-value="<?php 
-        echo Security::attr($sort_configuration->column());
+        echo \esc_attr($sort_configuration->column());
         ?>"
              data-report-sort-direction-value="<?php 
-        echo Security::attr($sort_configuration->direction());
+        echo \esc_attr($sort_configuration->direction());
         ?>"
              data-report-columns-value="<?php 
         echo \esc_attr(Security::json_encode($table->visible_column_ids()));
@@ -184,31 +182,31 @@ class Analytics_Page extends \IAWP\Admin_Page\Admin_Page
         echo Security::string($table->group()->singular());
         ?>"
              data-report-relative-range-id-value="<?php 
-        echo Security::attr($options->relative_range_id());
+        echo \esc_attr($options->relative_range_id());
         ?>"
              data-report-exact-start-value="<?php 
-        echo Security::attr($options->start());
+        echo \esc_attr($options->start());
         ?>"
              data-report-exact-end-value="<?php 
-        echo Security::attr($options->end());
+        echo \esc_attr($options->end());
         ?>"
              data-report-group-value="<?php 
-        echo Security::attr($table->group()->id());
+        echo \esc_attr($table->group()->id());
         ?>"
              data-report-filters-value="<?php 
         echo \esc_attr(Security::json_encode($options->raw_filters()));
         ?>"
              data-report-filter-logic-value="<?php 
-        echo Security::attr($options->filter_logic());
+        echo \esc_attr($options->filter_logic());
         ?>"
              data-report-chart-interval-value="<?php 
-        echo Security::attr($options->chart_interval()->id());
+        echo \esc_attr($options->chart_interval()->id());
         ?>"
              data-report-sort-column-value="<?php 
-        echo Security::attr($sort_configuration->column());
+        echo \esc_attr($sort_configuration->column());
         ?>"
              data-report-sort-direction-value="<?php 
-        echo Security::attr($sort_configuration->direction());
+        echo \esc_attr($sort_configuration->direction());
         ?>"
              data-report-columns-value="<?php 
         echo \esc_attr(Security::json_encode($table->visible_column_ids()));
@@ -265,6 +263,49 @@ class Analytics_Page extends \IAWP\Admin_Page\Admin_Page
         }
         ?>
         <?php 
+        if (!\IAWPSCOPED\iawp_is_pro()) {
+            $type = $table->group()->id();
+            if ($type == 'referrer_type') {
+                $type = 'referrer';
+            } elseif ($type == 'country' || $type == 'city') {
+                $type = 'geolocation';
+            } elseif ($type == 'device_type' || $type == 'browser' || $type == 'os') {
+                $type = 'device';
+            }
+            $report_names = ['page' => \esc_html__('Pages', 'independent-analytics'), 'referrer' => \esc_html__('Referrers', 'independent-analytics'), 'geolocation' => \esc_html__('Geolocations', 'independent-analytics'), 'device' => \esc_html__('Devices', 'independent-analytics'), 'campaigns' => \esc_html__('UTM campaigns', 'independent-analytics'), 'clicks' => \esc_html__('Clicks', 'independent-analytics'), 'ecommerce' => \esc_html__('eCommerce orders', 'independent-analytics'), 'forms' => \esc_html__('Form submissions', 'independent-analytics')];
+            ?>
+            <div id="iawp-solo-report-upsell-modal" aria-hidden="true" class="mm micromodal-slide" data-controller="examiner">
+                <div tabindex="-1" class="mm__overlay mm__overlay--full-screen" data-action="click->examiner#closeUpsell:self" >
+                    <div role="dialog" aria-modal="true" class="mm__container solo-report-upsell-container">
+                        <div class="title-large"><?php 
+            \esc_html_e('Upgrade to Pro to Unlock Solo Reports', 'independent-analytics');
+            ?></div>
+                        <div>
+                            <p><?php 
+            \printf(\esc_html_x('Open a full report for this %s to see its metrics, chart, and segmented data from other reports:', 'page, referrer, geolocation, or device', 'independent-analytics'), $type);
+            ?></p>
+                            <ul>
+                                <?php 
+            foreach ($report_names as $id => $label) {
+                if ($type != $id) {
+                    echo '<li>' . $label . '</li>';
+                }
+            }
+            ?>
+                            </ul>
+                            <a class="iawp-button purple" href="https://independentwp.com/features/solo-reports/?utm_source=User+Dashboard&utm_medium=WP+Admin&utm_campaign=Solo+Reports+modal&utm_content=Modal" target="_blank">
+                                <?php 
+            \esc_html_e('Learn more about Solo Reports', 'independent-analytics');
+            ?> &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php 
+        }
+        ?>
+        <?php 
         if (Env::get_tab() === 'geo') {
             echo '<div class="geo-ip-attribution">';
             echo \esc_html_x('Geolocation data powered by', 'Following text is a noun: DB-IP', 'independent-analytics') . ' ' . '<a href="https://db-ip.com" target="_blank">DB-IP</a>.';
@@ -292,7 +333,7 @@ class Analytics_Page extends \IAWP\Admin_Page\Admin_Page
                 }
             }
             if (\get_option('iawp_need_clear_cache')) {
-                echo \IAWPSCOPED\iawp_render('notices.notice', ['notice_text' => \__('Please clear your cache to ensure tracking works properly.', 'independent-analytics'), 'button_text' => \__('I\'ve cleared the cache', 'independent-analytics'), 'id' => 'iawp_need_clear_cache', 'notice' => 'iawp-warning', 'url' => 'https://independentwp.com/knowledgebase/common-questions/views-not-recording/']);
+                echo \IAWPSCOPED\iawp_render('notices.notice', ['notice_text' => \__('Please clear your cache to ensure tracking works properly.', 'independent-analytics'), 'button_text' => \__('I\'ve cleared the cache', 'independent-analytics'), 'id' => 'iawp_need_clear_cache', 'notice' => 'iawp-warning', 'url' => 'https://independentwp.com/knowledgebase/common-questions/why-clear-cache/']);
             }
             if ($show_logged_in_tracking_notice) {
                 echo \IAWPSCOPED\iawp_render('notices.notice', ['notice_text' => '<strong>' . \sprintf(\_x('%s compatibility:', 'Variable is the name of a plugin', 'independent-analytics'), $requires_logged_in_tracking) . '</strong> ' . \__('We recommend you enable tracking for logged-in visitors.', 'independent-analytics'), 'button_text' => \__('Dismiss', 'independent-analytics'), 'id' => 'enable-logged-in-tracking', 'notice' => 'iawp-warning', 'url' => 'https://independentwp.com/knowledgebase/tracking/how-to-track-logged-in-visitors/']);

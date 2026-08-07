@@ -46,35 +46,33 @@
                 endif; ?>
             </div><?php
         endif;
-    endif;
+endif;
 
-    if ($number_of_shown_rows > 0) :
-        foreach ($rows as $index => $row) :
-            $class = $table->id() === 'views' && $row->is_deleted() ? 'iawp-row deleted' : 'iawp-row'; ?>
+if ($number_of_shown_rows > 0) :
+    foreach ($rows as $index => $row) :
+        $class = $table->id() === 'views' && $row->is_deleted() ? 'iawp-row deleted' : 'iawp-row'; ?>
             <div class="<?php echo esc_attr($class); ?>" <?php echo $table->get_row_data_attributes($row); ?>><?php
-                foreach ($all_columns as $column) :
-                    $class = $column->is_visible() ? 'cell' : 'cell hide'; ?>
+            foreach ($all_columns as $column) :
+                $class = $column->is_visible() ? 'cell' : 'cell hide'; ?>
                     <div class="<?php echo esc_attr($class); ?>"
                          data-column="<?php echo esc_attr($column->id()); ?>"
                          data-test-visibility="<?php echo $column->is_visible() ? 'visible' : 'hidden'; ?>"
                     >
                         <div class="row-number">
                             <span><?php echo $index + 1; ?></span>
-                            <?php if($is_pro): ?>
-                                <button class="open-examiner-button"
-                                        data-action="report#showExaminer"
-                                        data-url="<?php echo esc_url($row->examiner_url()); ?>"
-                                        data-title="<?php echo esc_html($row->examiner_title()); ?>"
-                                >
-                                <span class="dashicons dashicons-search"></span>
-                                </button>
-                            <?php endif; ?>
+                            <button class="open-examiner-button"
+                                    data-action="<?php echo $is_pro ? 'report#showExaminer' : 'report#showUpsell'; ?>"
+                                    data-url="<?php echo esc_url($row->examiner_url()); ?>"
+                                    data-title="<?php echo esc_html($row->examiner_title()); ?>"
+                            >
+                            <span class="dashicons dashicons-search"></span>
+                            </button>
                         </div>
-                        <span class="cell-content"><?php echo wp_kses_post($table->get_cell_content($row, $column)); ?></span>
+                        <span class="cell-content"><?php echo \IAWP\Utils\Security::table_cell_content($table->get_cell_content($row, $column)); ?></span>
                         <span class="animator"></span>
                     </div><?php
-                endforeach; ?>
-            </div><?php 
-        endforeach;
-    endif; ?>
+            endforeach; ?>
+            </div><?php
+    endforeach;
+endif; ?>
 </div>
